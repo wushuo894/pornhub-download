@@ -1,0 +1,101 @@
+package pornhub.download;
+
+import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.thread.ThreadUtil;
+import cn.hutool.core.util.StrUtil;
+import cn.hutool.cron.CronUtil;
+import cn.hutool.cron.task.Task;
+import cn.hutool.http.HttpUtil;
+import cn.hutool.log.Log;
+import com.alibaba.fastjson.JSON;
+import pornhub.download.entity.Config;
+import pornhub.download.entity.User;
+import pornhub.download.entity.Video;
+import pornhub.download.util.UserUtil;
+import pornhub.download.util.VideoUtil;
+
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+
+public class Main {
+
+    public static Config config = new Config();
+
+    private static final Log log = Log.get(Main.class);
+
+    public static void main(String[] args) {
+        File configFile = new File("config.json");
+        if (!configFile.exists()) {
+            FileUtil.writeString(JSON.toJSONString(config, true), configFile, StandardCharsets.UTF_8);
+        }
+        config = JSON.parseObject(FileUtil.readUtf8String(configFile), Config.class);
+        Runnable runnable = () -> ThreadUtil.execAsync(() -> {
+            List<User> subscriptions = UserUtil.getSubscriptions(config.getUrl());
+            for (User user : subscriptions) {
+                downloadUser(user);
+            }
+        });
+        String cron = config.getCron();
+        if (StrUtil.isNotBlank(cron)) {
+            log.info("定时任务开启");
+            CronUtil.schedule(cron, (Task) () -> {
+                log.info("定时任务");
+                runnable.run();
+            });
+            CronUtil.start();
+        } else {
+            runnable.run();
+        }
+    }
+
+    public static void downloadUser(User user) {
+        String userName = user.getName();
+        String avatar = user.getAvatar();
+
+        File avatarFile = new File(config.getPath() + "/model/" + userName + "/avatar.jpg");
+        if (!avatarFile.exists()) {
+            HttpUtil.downloadFile(avatar, avatarFile);
+        }
+
+        try {
+            List<Video> videoList = UserUtil.getVideoList(user);
+            for (Video video : videoList) {
+                String videoTitle = video.getTitle();
+                File file = new File(config.getPath() + "/model/" + userName + "/" + videoTitle + ".mp4");
+                if (file.exists()) {
+                    log.info("已存在\t" + file);
+                    continue;
+                }
+                download(video, file);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void download(Video video, File file) {
+        String mp4Url = VideoUtil.getMp4Url(video);
+        if (StrUtil.isBlank(mp4Url)) {
+            return;
+        }
+        if (file.exists()) {
+            log.info("存在\t" + file);
+            return;
+        }
+        for (int i = 0; i < 3; ) {
+            try {
+                VideoUtil.download(mp4Url, file);
+                return;
+            } catch (Exception e) {
+                e.printStackTrace();
+                i++;
+                log.info(String.valueOf(file));
+                log.info("重试\t" + i);
+            }
+        }
+        log.info(String.valueOf(file));
+        log.info("超过重试次数");
+    }
+
+}
