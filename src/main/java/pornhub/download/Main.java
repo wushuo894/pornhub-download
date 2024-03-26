@@ -1,6 +1,7 @@
 package pornhub.download;
 
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.io.resource.ResourceUtil;
 import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.cron.CronUtil;
@@ -17,6 +18,7 @@ import pornhub.download.util.VideoUtil;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class Main {
 
@@ -25,9 +27,9 @@ public class Main {
     private static final Log log = Log.get(Main.class);
 
     public static void main(String[] args) {
-        File configFile = new File("config.json");
+        File configFile = new File("config.json5");
         if (!configFile.exists()) {
-            FileUtil.writeString(JSON.toJSONString(config, true), configFile, StandardCharsets.UTF_8);
+            FileUtil.writeString(ResourceUtil.readUtf8Str("config.json5"), configFile, StandardCharsets.UTF_8);
         }
         config = JSON.parseObject(FileUtil.readUtf8String(configFile), Config.class);
         Runnable runnable = () -> ThreadUtil.execAsync(() -> {
@@ -64,7 +66,7 @@ public class Main {
                 String videoTitle = video.getTitle();
                 File file = new File(config.getPath() + "/model/" + userName + "/" + videoTitle + ".mp4");
                 if (file.exists()) {
-                    log.info("已存在\t" + file);
+                    log.info("已存在 {}", file);
                     continue;
                 }
                 download(video, file);
@@ -80,10 +82,14 @@ public class Main {
             return;
         }
         if (file.exists()) {
-            log.info("存在\t" + file);
+            log.info("存在 {}", file);
             return;
         }
-        for (int i = 0; i < 3; ) {
+        int i = 0;
+        Long retry = config.getRetry();
+        Long retryInterval = config.getRetryInterval();
+        Boolean retryWaitDoubled = config.getRetryWaitDoubled();
+        do {
             try {
                 VideoUtil.download(mp4Url, file);
                 return;
@@ -91,11 +97,19 @@ public class Main {
                 e.printStackTrace();
                 i++;
                 log.info(String.valueOf(file));
-                log.info("重试\t" + i);
+                log.info("重试 {}", i);
             }
-        }
+            // 重试等待时间
+            if (retryInterval > 0) {
+                ThreadUtil.sleep(retryInterval, TimeUnit.SECONDS);
+            }
+            // 等待时间翻倍
+            if (retryWaitDoubled) {
+                retryInterval = retryInterval * 2;
+            }
+        } while (retry < 1 || retry > i);
         log.info(String.valueOf(file));
-        log.info("超过重试次数");
+        log.info("超过重试次数 {}", i);
     }
 
 }

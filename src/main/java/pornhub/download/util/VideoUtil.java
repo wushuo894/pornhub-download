@@ -5,8 +5,8 @@ import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.io.StreamProgress;
 import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.core.util.ReUtil;
-import cn.hutool.http.HttpDownloader;
 import cn.hutool.http.HttpRequest;
+import cn.hutool.http.HttpUtil;
 import cn.hutool.http.cookie.GlobalCookieManager;
 import cn.hutool.log.Log;
 import cn.hutool.script.ScriptUtil;
@@ -44,7 +44,9 @@ public class VideoUtil {
         String url = video.getUrl();
         try {
             CookieManager cookieManager = GlobalCookieManager.getCookieManager();
-            Document parse = Jsoup.parse(HttpRequest.get(url)
+            HttpRequest httpRequest = HttpRequest.get(url);
+            ProxyUtil.addProxy(httpRequest);
+            Document parse = Jsoup.parse(httpRequest
                     .setFollowRedirectsCookie(true)
                     .enableDefaultCookie()
                     .execute()
@@ -73,8 +75,10 @@ public class VideoUtil {
             JSONArray mediaDefinitions = jsonObject1.getJSONArray("mediaDefinitions");
             List<JSONObject> collect = mediaDefinitions.toJavaList(JSONObject.class)
                     .stream().filter(item -> item.getString("format").equals("mp4")).collect(Collectors.toList());
-            JSONArray objects = JSON.parseArray(HttpRequest.get(collect
-                            .get(0).getString("videoUrl"))
+            httpRequest = HttpRequest.get(collect
+                    .get(0).getString("videoUrl"));
+            ProxyUtil.addProxy(httpRequest);
+            JSONArray objects = JSON.parseArray(httpRequest
                     .setFollowRedirectsCookie(true)
                     .cookie(cookieManager.getCookieStore().getCookies())
                     .execute().body());
@@ -101,22 +105,27 @@ public class VideoUtil {
         OutputStream outputStream = null;
         try {
             outputStream = FileUtil.getOutputStream(tmpFile);
-            HttpDownloader.download(mp4Url, outputStream, true, new StreamProgress() {
-                @Override
-                public void start() {
-                    log.info("开始下载\t" + file);
-                }
+            HttpRequest httpRequest = HttpUtil.createGet(mp4Url, true);
+            ProxyUtil.addProxy(httpRequest);
+            httpRequest
+                    .timeout(-1)
+                    .execute()
+                    .writeBody(outputStream, true, new StreamProgress() {
+                        @Override
+                        public void start() {
+                            log.info("开始下载 {}", file);
+                        }
 
-                @Override
-                public void progress(long total, long progressSize) {
-                    System.out.print("\r" + (1.0 * progressSize / total * 100));
-                }
+                        @Override
+                        public void progress(long total, long progressSize) {
+                            System.out.print("\r" + (1.0 * progressSize / total * 100));
+                        }
 
-                @Override
-                public void finish() {
-                    log.info("下载完成\t" + file);
-                }
-            });
+                        @Override
+                        public void finish() {
+                            log.info("下载完成 {}", file);
+                        }
+                    });
             FileUtil.move(tmpFile, file, true);
         } catch (Exception e) {
             e.printStackTrace();

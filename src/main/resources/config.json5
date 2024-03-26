@@ -1,0 +1,19 @@
+{
+  // 定时任务
+  "cron": "",
+  // 下载位置
+  "path": "Z://Media/pornhub",
+  // 订阅
+  "url": "https://www.pornhub.com/users/wushuo894/subscriptions",
+  // 重试次数 0 不重试 -1 一直重试 默认重试三次
+  "retry": 3,
+  // 重试间隔时间 单位 秒
+  "retryInterval": 5,
+  // 重试等待时间翻倍 默认 true
+  "retryWaitDoubled": true,
+  // 代理 如 127.0.0.1:8080
+  "proxy": {
+    "host": "",
+    "proxy": ""
+  }
+}

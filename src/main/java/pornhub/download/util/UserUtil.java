@@ -25,7 +25,10 @@ public class UserUtil {
      * @return
      */
     public static List<User> getSubscriptions(String url) {
-        String body = HttpRequest.get(url)
+        HttpRequest httpRequest = HttpRequest.get(url);
+        ProxyUtil.addProxy(httpRequest);
+
+        String body = httpRequest
                 .execute()
                 .body();
 
@@ -79,7 +82,11 @@ public class UserUtil {
      */
     public static List<Video> getVideoList(User user) {
         String url = user.getUrl();
-        Document parse = Jsoup.parse(HttpRequest.get(url + "/videos?")
+
+        HttpRequest httpRequest = HttpRequest.get(url + "/videos?");
+        ProxyUtil.addProxy(httpRequest);
+
+        Document parse = Jsoup.parse(httpRequest
                 .execute()
                 .body());
         int maxPageNumber = parse.body().getElementsByClass("page_number")
@@ -96,7 +103,9 @@ public class UserUtil {
         for (int i = 1; i <= maxPageNumber; i++) {
             Document page = parse;
             if (i > 1) {
-                page = Jsoup.parse(HttpRequest.get(url + "/videos")
+                httpRequest = HttpRequest.get(url + "/videos");
+                ProxyUtil.addProxy(httpRequest);
+                page = Jsoup.parse(httpRequest
                         .form("page", i)
                         .execute()
                         .body());
