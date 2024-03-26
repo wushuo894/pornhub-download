@@ -2,7 +2,7 @@
 *.iml
 logs
 *.log
-config.json
+/config.json5
 HELP.md
 target/
 !.mvn/wrapper/maven-wrapper.jar
