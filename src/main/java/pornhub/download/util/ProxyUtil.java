@@ -9,15 +9,16 @@ public class ProxyUtil {
     private static final Log log = Log.get(ProxyUtil.class);
 
     public static HttpRequest addProxy(HttpRequest request) {
+        String url = request.getUrl();
         request.setConnectionTimeout(3000)
                 .timeout(3000);
         Config config = Main.config;
         Config.Proxy proxy = config.getProxy();
         if (proxy.hasProxy()) {
-            log.info("proxy" + request.getUrl());
+            log.info("proxy ===> {}", url);
             request.setHttpProxy(proxy.getHost(), proxy.getPort());
-        }else {
-            log.info("not proxy" + request.getUrl());
+        } else {
+            log.info("not proxy ===> {}", url);
         }
         return request;
     }
