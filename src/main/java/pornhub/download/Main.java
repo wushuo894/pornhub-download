@@ -56,7 +56,7 @@ public class Main {
         String avatar = user.getAvatar();
 
         File avatarFile = new File(config.getPath() + "/model/" + userName + "/avatar.jpg");
-        if (!avatarFile.exists()) {
+        if (!avatarFile.exists() && StrUtil.isNotBlank(avatar)) {
             HttpUtil.downloadFile(avatar, avatarFile);
         }
 
