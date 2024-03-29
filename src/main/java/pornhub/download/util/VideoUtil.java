@@ -87,7 +87,7 @@ public class VideoUtil {
             videoUrl = jsonObject.getString("videoUrl");
         } catch (Exception e) {
             log.info(url);
-            e.printStackTrace();
+            log.error(e, e.getMessage());
             ThreadUtil.sleep(10000);
         }
         return videoUrl;
@@ -128,7 +128,7 @@ public class VideoUtil {
                     });
             FileUtil.move(tmpFile, file, true);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e, e.getMessage());
         }
         IoUtil.close(outputStream);
     }
