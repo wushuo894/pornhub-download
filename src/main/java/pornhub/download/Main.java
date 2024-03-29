@@ -33,10 +33,14 @@ public class Main {
         }
         config = JSON.parseObject(FileUtil.readUtf8String(configFile), Config.class);
         Runnable runnable = () -> ThreadUtil.execAsync(() -> {
-            List<User> subscriptions = UserUtil.getSubscriptions(config.getUrl());
-            for (User user : subscriptions) {
-                log.info(user.toString());
-                downloadUser(user);
+            try {
+                List<User> subscriptions = UserUtil.getSubscriptions(config.getUrl());
+                for (User user : subscriptions) {
+                    log.info(user.toString());
+                    downloadUser(user);
+                }
+            } catch (Exception e) {
+                log.error(e, e.getMessage());
             }
         });
         String cron = config.getCron();

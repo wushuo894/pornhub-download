@@ -6,6 +6,7 @@ import cn.hutool.core.io.StreamProgress;
 import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.core.util.ReUtil;
 import cn.hutool.http.HttpRequest;
+import cn.hutool.http.HttpResponse;
 import cn.hutool.http.HttpUtil;
 import cn.hutool.http.cookie.GlobalCookieManager;
 import cn.hutool.log.Log;
@@ -21,6 +22,7 @@ import pornhub.download.entity.Video;
 
 import javax.script.ScriptEngine;
 import java.io.File;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.CookieManager;
 import java.util.List;
@@ -100,37 +102,41 @@ public class VideoUtil {
      * @param file
      */
     public static void download(String mp4Url, File file) {
+        FileUtil.del(file + ".tmp");
         File tmpFile = new File(file + ".tmp");
-        FileUtil.del(tmpFile);
         OutputStream outputStream = null;
+        InputStream inputStream = null;
         try {
             outputStream = FileUtil.getOutputStream(tmpFile);
             HttpRequest httpRequest = HttpUtil.createGet(mp4Url, true);
             ProxyUtil.addProxy(httpRequest);
-            httpRequest
+            HttpResponse response = httpRequest
                     .timeout(-1)
-                    .execute()
-                    .writeBody(outputStream, true, new StreamProgress() {
-                        @Override
-                        public void start() {
-                            log.info("开始下载 {}", file);
-                        }
+                    .executeAsync();
+            inputStream = response.bodyStream();
+            IoUtil.copy(inputStream, outputStream, 81960, new StreamProgress() {
+                @Override
+                public void start() {
+                    log.info("开始下载 {}", file);
+                }
 
-                        @Override
-                        public void progress(long total, long progressSize) {
-                            System.out.print("\r" + (1.0 * progressSize / total * 100));
-                        }
+                @Override
+                public void progress(long total, long progressSize) {
+                    System.out.print("\r" + (1.0 * progressSize / total * 100));
+                }
 
-                        @Override
-                        public void finish() {
-                            log.info("下载完成 {}", file);
-                        }
-                    });
+                @Override
+                public void finish() {
+                    log.info("下载完成 {}", file);
+                }
+            });
             FileUtil.move(tmpFile, file, true);
         } catch (Exception e) {
             log.error(e, e.getMessage());
+            tmpFile.deleteOnExit();
         }
         IoUtil.close(outputStream);
+        IoUtil.close(inputStream);
     }
 
 }
