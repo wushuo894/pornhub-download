@@ -10,8 +10,9 @@ public class ProxyUtil {
 
     public static HttpRequest addProxy(HttpRequest request) {
         String url = request.getUrl();
-        request.setConnectionTimeout(3000)
-                .timeout(3000);
+        request.setConnectionTimeout(10000)
+                .timeout(10000)
+                .setFollowRedirects(true);
         Config config = Main.config;
         Config.Proxy proxy = config.getProxy();
         if (proxy.hasProxy()) {
