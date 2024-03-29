@@ -35,6 +35,7 @@ public class Main {
         Runnable runnable = () -> ThreadUtil.execAsync(() -> {
             List<User> subscriptions = UserUtil.getSubscriptions(config.getUrl());
             for (User user : subscriptions) {
+                log.info(user.toString());
                 downloadUser(user);
             }
         });
@@ -63,6 +64,7 @@ public class Main {
         try {
             List<Video> videoList = UserUtil.getVideoList(user);
             for (Video video : videoList) {
+                log.info(video.toString());
                 String videoTitle = video.getTitle();
                 File file = new File(config.getPath() + "/model/" + userName + "/" + videoTitle + ".mp4");
                 if (file.exists()) {
@@ -72,7 +74,7 @@ public class Main {
                 download(video, file);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e, e.getMessage());
         }
     }
 
@@ -94,7 +96,7 @@ public class Main {
                 VideoUtil.download(mp4Url, file);
                 return;
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error(e, e.getMessage());
                 i++;
                 log.info(String.valueOf(file));
                 log.info("重试 {}", i);
