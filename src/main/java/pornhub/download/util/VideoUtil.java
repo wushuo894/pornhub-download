@@ -114,7 +114,7 @@ public class VideoUtil {
                     .timeout(-1)
                     .executeAsync();
             inputStream = response.bodyStream();
-            IoUtil.copy(inputStream, outputStream, 81960, new StreamProgress() {
+            IoUtil.copy(inputStream, outputStream, 81920, new StreamProgress() {
                 @Override
                 public void start() {
                     log.info("开始下载 {}", file);
