@@ -6,7 +6,6 @@ import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.cron.CronUtil;
 import cn.hutool.cron.task.Task;
-import cn.hutool.http.HttpUtil;
 import cn.hutool.log.Log;
 import com.alibaba.fastjson.JSON;
 import pornhub.download.entity.Config;
@@ -36,6 +35,9 @@ public class Main {
             try {
                 List<User> subscriptions = UserUtil.getSubscriptions(config.getUrl());
                 for (User user : subscriptions) {
+                    UserUtil.downloadAvatar(user);
+                }
+                for (User user : subscriptions) {
                     log.info(user.toString());
                     downloadUser(user);
                 }
@@ -58,19 +60,12 @@ public class Main {
 
     public static void downloadUser(User user) {
         String userName = user.getName();
-        String avatar = user.getAvatar();
-
-        File avatarFile = new File(config.getPath() + "/model/" + userName + "/avatar.jpg");
-        if (!avatarFile.exists() && StrUtil.isNotBlank(avatar)) {
-            HttpUtil.downloadFile(avatar, avatarFile);
-        }
-
         try {
             List<Video> videoList = UserUtil.getVideoList(user);
             for (Video video : videoList) {
                 log.info(video.toString());
                 String videoTitle = video.getTitle();
-                File file = new File(config.getPath() + "/model/" + userName + "/" + videoTitle + ".mp4");
+                File file = new File(config.getPath() + "/" + userName + "/" + videoTitle + ".mp4");
                 if (file.exists()) {
                     log.info("已存在 {}", file);
                     continue;

@@ -1,14 +1,20 @@
 package pornhub.download.util;
 
+import cn.hutool.core.img.ImgUtil;
 import cn.hutool.core.util.NumberUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpRequest;
+import cn.hutool.http.HttpUtil;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import pornhub.download.Main;
 import pornhub.download.entity.User;
 import pornhub.download.entity.Video;
 
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -18,6 +24,33 @@ import java.util.stream.Collectors;
  * 用户工具
  */
 public class UserUtil {
+    /**
+     * 下载头像
+     *
+     * @param user
+     */
+    public static void downloadAvatar(User user) {
+        String userName = user.getName();
+        String avatar = user.getAvatar();
+        if (StrUtil.isBlank(avatar)) {
+            return;
+        }
+        if (StrUtil.isBlank(userName)) {
+            return;
+        }
+
+        File avatarFile = new File(Main.config.getPath() + "/" + userName + "/avatar.jpg");
+        if (avatarFile.exists()) {
+            BufferedImage bufferedImage = ImgUtil.read(avatarFile);
+            if (bufferedImage.getWidth() >= 800) {
+                return;
+            }
+            ImgUtil.write(ImgUtil.toBufferedImage(ImgUtil.scale(bufferedImage, 800, 800), "jpg"), avatarFile);
+            return;
+        }
+        HttpUtil.downloadFile(avatar, avatarFile);
+    }
+
     /**
      * 获取订阅用户
      *
