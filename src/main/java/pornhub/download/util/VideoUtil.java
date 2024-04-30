@@ -91,6 +91,7 @@ public class VideoUtil {
             log.info(url);
             log.error(e, e.getMessage());
             ThreadUtil.sleep(10000);
+            return getMp4Url(video);
         }
         return videoUrl;
     }
@@ -134,9 +135,10 @@ public class VideoUtil {
         } catch (Exception e) {
             log.error(e, e.getMessage());
             tmpFile.deleteOnExit();
+        } finally {
+            IoUtil.close(outputStream);
+            IoUtil.close(inputStream);
         }
-        IoUtil.close(outputStream);
-        IoUtil.close(inputStream);
     }
 
 }
