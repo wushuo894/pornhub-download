@@ -6,14 +6,14 @@ import cn.hutool.core.io.StreamProgress;
 import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.core.util.ReUtil;
 import cn.hutool.http.HttpRequest;
-import cn.hutool.http.HttpResponse;
 import cn.hutool.http.HttpUtil;
 import cn.hutool.http.cookie.GlobalCookieManager;
 import cn.hutool.log.Log;
 import cn.hutool.script.ScriptUtil;
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -27,6 +27,7 @@ import java.io.OutputStream;
 import java.net.CookieManager;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 /**
@@ -34,6 +35,7 @@ import java.util.stream.Collectors;
  */
 public class VideoUtil {
     private static final Log log = Log.get(VideoUtil.class);
+    private static final Gson GSON = new Gson();
 
     /**
      * 获取视频mp4地址
@@ -42,17 +44,17 @@ public class VideoUtil {
      * @return
      */
     public static String getMp4Url(Video video) {
-        String videoUrl = null;
+        String videoUrl;
         String url = video.getUrl();
         try {
             CookieManager cookieManager = GlobalCookieManager.getCookieManager();
             HttpRequest httpRequest = HttpRequest.get(url);
             ProxyUtil.addProxy(httpRequest);
-            Document parse = Jsoup.parse(httpRequest
+
+            Document parse = httpRequest
                     .setFollowRedirectsCookie(true)
                     .enableDefaultCookie()
-                    .execute()
-                    .body());
+                    .thenFunction(res -> Jsoup.parse(res.body()));
             Element body = parse.body();
 
             Element player = body.getElementById("player");
@@ -72,21 +74,23 @@ public class VideoUtil {
             ScriptEngine jsEngine = ScriptUtil.createJsEngine();
             jsEngine.eval(html);
             String json = (String) jsEngine.eval("json");
-            JSONObject jsonObject1 = JSON.parseObject(json);
 
-            JSONArray mediaDefinitions = jsonObject1.getJSONArray("mediaDefinitions");
-            List<JSONObject> collect = mediaDefinitions.toJavaList(JSONObject.class)
-                    .stream().filter(item -> item.getString("format").equals("mp4")).collect(Collectors.toList());
+            JsonObject jsonObject1 = GSON.fromJson(json, JsonObject.class);
+
+            JsonArray mediaDefinitions = jsonObject1.getAsJsonArray("mediaDefinitions");
+            List<JsonElement> collect = mediaDefinitions.asList()
+                    .stream().filter(item -> item.getAsJsonObject().get("format").getAsString().equals("mp4")).collect(Collectors.toList());
             httpRequest = HttpRequest.get(collect
-                    .get(0).getString("videoUrl"));
+                    .get(0).getAsJsonObject().get("videoUrl").getAsString());
             ProxyUtil.addProxy(httpRequest);
-            JSONArray objects = JSON.parseArray(httpRequest
+
+            JsonArray objects = httpRequest
                     .setFollowRedirectsCookie(true)
                     .cookie(cookieManager.getCookieStore().getCookies())
-                    .execute().body());
-            List<JSONObject> javaList = objects.toJavaList(JSONObject.class);
-            JSONObject jsonObject = javaList.get(javaList.size() - 1);
-            videoUrl = jsonObject.getString("videoUrl");
+                    .thenFunction(res -> GSON.fromJson(res.body(), JsonArray.class));
+            List<JsonElement> javaList = objects.asList();
+            JsonElement jsonObject = javaList.get(javaList.size() - 1);
+            videoUrl = jsonObject.getAsJsonObject().get("videoUrl").getAsString();
         } catch (Exception e) {
             log.info(url);
             log.error(e, e.getMessage());
@@ -106,38 +110,41 @@ public class VideoUtil {
         FileUtil.del(file + ".tmp");
         File tmpFile = new File(file + ".tmp");
         OutputStream outputStream = null;
-        InputStream inputStream = null;
+        AtomicReference<InputStream> inputStream = new AtomicReference<>(null);
         try {
             outputStream = FileUtil.getOutputStream(tmpFile);
             HttpRequest httpRequest = HttpUtil.createGet(mp4Url, true);
             ProxyUtil.addProxy(httpRequest);
-            HttpResponse response = httpRequest
+            OutputStream finalOutputStream = outputStream;
+            httpRequest
                     .timeout(-1)
-                    .executeAsync();
-            inputStream = response.bodyStream();
-            IoUtil.copy(inputStream, outputStream, 81920, new StreamProgress() {
-                @Override
-                public void start() {
-                    log.info("开始下载 {}", file);
-                }
+                    .then(res -> {
+                        inputStream.set(res.bodyStream());
+                        IoUtil.copy(inputStream.get(), finalOutputStream, 81920, new StreamProgress() {
+                            @Override
+                            public void start() {
+                                log.info("开始下载 {}", file);
+                            }
 
-                @Override
-                public void progress(long total, long progressSize) {
-                    System.out.print("\r" + (1.0 * progressSize / total * 100));
-                }
+                            @Override
+                            public void progress(long total, long progressSize) {
+                                System.out.print("\r" + (1.0 * progressSize / total * 100));
+                            }
 
-                @Override
-                public void finish() {
-                    log.info("下载完成 {}", file);
-                }
-            });
-            FileUtil.move(tmpFile, file, true);
+                            @Override
+                            public void finish() {
+                                log.info("下载完成 {}", file);
+                            }
+                        });
+                        FileUtil.move(tmpFile, file, true);
+                    });
+
         } catch (Exception e) {
             log.error(e, e.getMessage());
             tmpFile.deleteOnExit();
         } finally {
             IoUtil.close(outputStream);
-            IoUtil.close(inputStream);
+            IoUtil.close(inputStream.get());
         }
     }
 

@@ -8,11 +8,11 @@ import pornhub.download.entity.Config;
 public class ProxyUtil {
     private static final Log log = Log.get(ProxyUtil.class);
 
-    public static HttpRequest addProxy(HttpRequest request) {
+    public static void addProxy(HttpRequest request) {
         String url = request.getUrl();
         request.setConnectionTimeout(10000)
                 .setFollowRedirects(true);
-        Config config = Main.config;
+        Config config = Main.CONFIG;
         Config.Proxy proxy = config.getProxy();
         if (proxy.hasProxy()) {
             log.info("proxy ===> {}", url);
@@ -20,6 +20,5 @@ public class ProxyUtil {
         } else {
             log.info("not proxy ===> {}", url);
         }
-        return request;
     }
 }
