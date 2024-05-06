@@ -5,6 +5,7 @@ import cn.hutool.core.img.ImgUtil;
 import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpRequest;
+import cn.hutool.http.HttpResponse;
 import cn.hutool.http.HttpUtil;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -25,6 +26,7 @@ import java.util.stream.Collectors;
  * 用户工具
  */
 public class UserUtil {
+
     /**
      * 下载头像
      *
@@ -40,7 +42,7 @@ public class UserUtil {
             return;
         }
 
-        File avatarFile = new File(Main.config.getPath() + "/" + userName + "/avatar.jpg");
+        File avatarFile = new File(Main.CONFIG.getPath() + "/" + userName + "/avatar.jpg");
         if (avatarFile.exists()) {
             BufferedImage bufferedImage = ImgUtil.read(avatarFile);
             if (bufferedImage.getWidth() >= 800) {
@@ -63,9 +65,7 @@ public class UserUtil {
             HttpRequest httpRequest = HttpRequest.get(url);
             ProxyUtil.addProxy(httpRequest);
 
-            String body = httpRequest
-                    .execute()
-                    .body();
+            String body = httpRequest.thenFunction(HttpResponse::body);
 
             Element moreData = Jsoup.parse(body)
                     .body()
@@ -126,9 +126,7 @@ public class UserUtil {
             HttpRequest httpRequest = HttpRequest.get(url + "/videos?");
             ProxyUtil.addProxy(httpRequest);
 
-            Document parse = Jsoup.parse(httpRequest
-                    .execute()
-                    .body());
+            Document parse = httpRequest.thenFunction(res -> Jsoup.parse(res.body()));
             int maxPageNumber = parse.body().getElementsByClass("page_number")
                     .stream()
                     .map(Element::text)
@@ -145,10 +143,9 @@ public class UserUtil {
                 if (i > 1) {
                     httpRequest = HttpRequest.get(url + "/videos");
                     ProxyUtil.addProxy(httpRequest);
-                    page = Jsoup.parse(httpRequest
+                    page = httpRequest
                             .form("page", i)
-                            .execute()
-                            .body());
+                            .thenFunction(res -> Jsoup.parse(res.body()));
                 }
                 Elements videoUList = page.getElementsByClass("videoUList");
                 for (Element element : videoUList) {

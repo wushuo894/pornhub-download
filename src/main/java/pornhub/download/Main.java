@@ -7,7 +7,7 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.cron.CronUtil;
 import cn.hutool.cron.task.Task;
 import cn.hutool.log.Log;
-import com.alibaba.fastjson.JSON;
+import com.google.gson.Gson;
 import pornhub.download.entity.Config;
 import pornhub.download.entity.User;
 import pornhub.download.entity.Video;
@@ -21,35 +21,36 @@ import java.util.concurrent.TimeUnit;
 
 public class Main {
 
-    public static Config config = new Config();
+    public static Config CONFIG = new Config();
 
-    private static final Log log = Log.get(Main.class);
+    private static final Log LOG = Log.get(Main.class);
 
     public static void main(String[] args) {
         File configFile = new File("config.json5");
         if (!configFile.exists()) {
             FileUtil.writeString(ResourceUtil.readUtf8Str("config.json5"), configFile, StandardCharsets.UTF_8);
         }
-        config = JSON.parseObject(FileUtil.readUtf8String(configFile), Config.class);
+        Gson gson = new Gson();
+        CONFIG = gson.fromJson(FileUtil.readUtf8String(configFile), Config.class);
         Runnable runnable = () -> ThreadUtil.execAsync(() -> {
             try {
-                List<User> subscriptions = UserUtil.getSubscriptions(config.getUrl());
+                List<User> subscriptions = UserUtil.getSubscriptions(CONFIG.getUrl());
                 for (User user : subscriptions) {
                     UserUtil.downloadAvatar(user);
                 }
                 for (User user : subscriptions) {
-                    log.info(user.toString());
+                    LOG.info(user.toString());
                     downloadUser(user);
                 }
             } catch (Exception e) {
-                log.error(e, e.getMessage());
+                LOG.error(e, e.getMessage());
             }
         });
-        String cron = config.getCron();
+        String cron = CONFIG.getCron();
         if (StrUtil.isNotBlank(cron)) {
-            log.info("定时任务开启");
+            LOG.info("定时任务开启");
             CronUtil.schedule(cron, (Task) () -> {
-                log.info("定时任务");
+                LOG.info("定时任务");
                 runnable.run();
             });
             CronUtil.start();
@@ -63,17 +64,17 @@ public class Main {
         try {
             List<Video> videoList = UserUtil.getVideoList(user);
             for (Video video : videoList) {
-                log.info(video.toString());
+                LOG.info(video.toString());
                 String videoTitle = video.getTitle();
-                File file = new File(config.getPath() + "/" + userName + "/" + videoTitle + ".mp4");
+                File file = new File(CONFIG.getPath() + "/" + userName + "/" + videoTitle + ".mp4");
                 if (file.exists()) {
-                    log.info("已存在 {}", file);
+                    LOG.info("已存在 {}", file);
                     continue;
                 }
                 download(video, file);
             }
         } catch (Exception e) {
-            log.error(e, e.getMessage());
+            LOG.error(e, e.getMessage());
         }
     }
 
@@ -83,22 +84,22 @@ public class Main {
             return;
         }
         if (file.exists()) {
-            log.info("存在 {}", file);
+            LOG.info("存在 {}", file);
             return;
         }
         int i = 0;
-        Long retry = config.getRetry();
-        Long retryInterval = config.getRetryInterval();
-        Boolean retryWaitDoubled = config.getRetryWaitDoubled();
+        Long retry = CONFIG.getRetry();
+        Long retryInterval = CONFIG.getRetryInterval();
+        Boolean retryWaitDoubled = CONFIG.getRetryWaitDoubled();
         do {
             try {
                 VideoUtil.download(mp4Url, file);
                 return;
             } catch (Exception e) {
-                log.error(e, e.getMessage());
+                LOG.error(e, e.getMessage());
                 i++;
-                log.info(String.valueOf(file));
-                log.info("重试 {}", i);
+                LOG.info(String.valueOf(file));
+                LOG.info("重试 {}", i);
             }
             // 重试等待时间
             if (retryInterval > 0) {
@@ -109,8 +110,8 @@ public class Main {
                 retryInterval = retryInterval * 2;
             }
         } while (retry < 1 || retry > i);
-        log.info(String.valueOf(file));
-        log.info("超过重试次数 {}", i);
+        LOG.info(String.valueOf(file));
+        LOG.info("超过重试次数 {}", i);
     }
 
 }
