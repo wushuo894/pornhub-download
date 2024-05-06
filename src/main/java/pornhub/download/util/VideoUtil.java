@@ -109,18 +109,20 @@ public class VideoUtil {
     public static void download(String mp4Url, File file) {
         FileUtil.del(file + ".tmp");
         File tmpFile = new File(file + ".tmp");
-        OutputStream outputStream = null;
+        AtomicReference<OutputStream> outputStream = new AtomicReference<>(null);
         AtomicReference<InputStream> inputStream = new AtomicReference<>(null);
         try {
-            outputStream = FileUtil.getOutputStream(tmpFile);
+            outputStream.set(FileUtil.getOutputStream(tmpFile));
             HttpRequest httpRequest = HttpUtil.createGet(mp4Url, true);
             ProxyUtil.addProxy(httpRequest);
-            OutputStream finalOutputStream = outputStream;
             httpRequest
                     .timeout(-1)
                     .then(res -> {
+                        if (!res.isOk()) {
+                            return;
+                        }
                         inputStream.set(res.bodyStream());
-                        IoUtil.copy(inputStream.get(), finalOutputStream, 81920, new StreamProgress() {
+                        IoUtil.copy(inputStream.get(), outputStream.get(), 81920, new StreamProgress() {
                             @Override
                             public void start() {
                                 log.info("开始下载 {}", file);
@@ -138,12 +140,11 @@ public class VideoUtil {
                         });
                         FileUtil.move(tmpFile, file, true);
                     });
-
         } catch (Exception e) {
             log.error(e, e.getMessage());
             tmpFile.deleteOnExit();
         } finally {
-            IoUtil.close(outputStream);
+            IoUtil.close(outputStream.get());
             IoUtil.close(inputStream.get());
         }
     }
