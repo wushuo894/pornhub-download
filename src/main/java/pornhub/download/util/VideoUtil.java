@@ -112,7 +112,6 @@ public class VideoUtil {
         AtomicReference<OutputStream> outputStream = new AtomicReference<>(null);
         AtomicReference<InputStream> inputStream = new AtomicReference<>(null);
         try {
-            outputStream.set(FileUtil.getOutputStream(tmpFile));
             HttpRequest httpRequest = HttpUtil.createGet(mp4Url, true);
             ProxyUtil.addProxy(httpRequest);
             httpRequest
@@ -121,6 +120,7 @@ public class VideoUtil {
                         if (!res.isOk()) {
                             return;
                         }
+                        outputStream.set(FileUtil.getOutputStream(tmpFile));
                         inputStream.set(res.bodyStream());
                         IoUtil.copy(inputStream.get(), outputStream.get(), 81920, new StreamProgress() {
                             @Override
