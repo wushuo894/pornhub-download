@@ -14,6 +14,7 @@ import pornhub.download.entity.Config;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -22,7 +23,12 @@ public class Main {
     public static Config CONFIG = new Config();
 
     public static void main(String[] args) {
+        Map<String, String> env = System.getenv();
+        String config = env.getOrDefault("CONFIG", "");
         File configFile = new File("config.json5");
+        if (StrUtil.isNotBlank(config)) {
+            configFile = new File(config + File.pathSeparator + "config.json5");
+        }
         if (!configFile.exists()) {
             FileUtil.writeString(ResourceUtil.readUtf8Str("config.json5"), configFile, StandardCharsets.UTF_8);
         }
