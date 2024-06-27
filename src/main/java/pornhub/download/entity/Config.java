@@ -12,6 +12,11 @@ import java.util.Objects;
 public class Config implements Serializable {
 
     /**
+     * 线程数
+     */
+    private Integer threadNum;
+
+    /**
      * 下载位置
      */
     private String path;
