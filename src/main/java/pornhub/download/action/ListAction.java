@@ -14,9 +14,11 @@ import pornhub.download.entity.User;
 import pornhub.download.entity.Video;
 import pornhub.download.util.UserUtil;
 
+import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static pornhub.download.Main.CONFIG;
@@ -33,12 +35,39 @@ public class ListAction implements Action {
     public static synchronized void loadList() {
         List<User> subscriptions = UserUtil.getSubscriptions(CONFIG.getUrl());
         LOG.info("loadList start");
+        AtomicInteger index = new AtomicInteger(0);
         LIST = subscriptions.stream()
                 .map(it -> {
-                    LOG.info(it.getName());
+                    LOG.info("{}/{}\t{}",
+                            index.incrementAndGet(),
+                            subscriptions.size(),
+                            it.getName());
+
+                    List<Video> videoList = UserUtil.getVideoList(it);
+                    for (Video video : videoList) {
+                        String url = video.getUrl();
+                        File file = video.file();
+                        DownloadAction.DownloadInfo downloadInfo = DownloadAction.downloadInfoMap.getOrDefault(url,
+                                new DownloadAction.DownloadInfo()
+                                        .setStart(Boolean.FALSE)
+                                        .setEnd(Boolean.FALSE)
+                                        .setDownloadLength(0L)
+                                        .setLength(1024L)
+                        );
+                        DownloadAction.downloadInfoMap.put(url, downloadInfo);
+                        if (file.exists()) {
+                            downloadInfo
+                                    .setLength(1024L)
+                                    .setDownloadLength(1024L)
+                                    .setStart(Boolean.TRUE)
+                                    .setEnd(Boolean.TRUE);
+                            LOG.info("已存在 {}", file);
+                        }
+                        video.setDownloadInfo(downloadInfo);
+                    }
                     UserVO userVO = new UserVO();
                     userVO.setUser(it)
-                            .setVideoList(UserUtil.getVideoList(it));
+                            .setVideoList(videoList);
                     return userVO;
                 }).collect(Collectors.toList());
         LOG.info("loadList end");
@@ -47,14 +76,11 @@ public class ListAction implements Action {
     static {
         // 定时刷新
         ThreadUtil.execute(() -> {
-//            while (true) {
             try {
                 loadList();
             } catch (Exception e) {
                 LOG.error(e);
             }
-//                ThreadUtil.sleep(1, TimeUnit.HOURS);
-//            }
         });
     }
 
@@ -62,20 +88,6 @@ public class ListAction implements Action {
     @Override
     public void doAction(HttpServerRequest req, HttpServerResponse res) {
         try {
-            for (UserVO userVO : LIST) {
-                List<Video> videoList = userVO.getVideoList();
-                for (Video video : videoList) {
-                    String url = video.getUrl();
-                    DownloadAction.DownloadInfo downloadInfo = DownloadAction.downloadInfoMap.getOrDefault(url,
-                            new DownloadAction.DownloadInfo()
-                                    .setStart(Boolean.FALSE)
-                                    .setEnd(Boolean.FALSE)
-                                    .setDownloadLength(0L)
-                                    .setLength(1024L)
-                    );
-                    video.setDownloadInfo(downloadInfo);
-                }
-            }
             String json = gson.toJson(LIST);
             res.setContentType("application/json; charset=utf-8");
             res.sendOk();

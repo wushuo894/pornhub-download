@@ -154,14 +154,14 @@ public class VideoUtil {
                             @Override
                             public void finish() {
                                 LOG.info("下载完成 {}", file);
-                                downloadInfo.setEnd(true);
+                                downloadInfo.setEnd(Boolean.TRUE);
                             }
                         });
-                        FileUtil.move(tmpFile, file, true);
+                        FileUtil.move(tmpFile, file, Boolean.TRUE);
                     });
         } catch (Exception e) {
-            downloadInfo.setEnd(true)
-                    .setError(true);
+            downloadInfo.setEnd(Boolean.TRUE)
+                    .setError(Boolean.TRUE);
             LOG.error(e, e.getMessage());
             tmpFile.deleteOnExit();
         } finally {
@@ -174,7 +174,7 @@ public class VideoUtil {
         File file = video.file();
         String mp4Url = getMp4Url(video);
         if (StrUtil.isBlank(mp4Url)) {
-            downloadInfo.setEnd(true);
+            downloadInfo.setEnd(Boolean.TRUE);
             return;
         }
         User user = video.getUser();
