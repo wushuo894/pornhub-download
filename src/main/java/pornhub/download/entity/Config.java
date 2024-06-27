@@ -4,16 +4,12 @@ import cn.hutool.core.util.StrUtil;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 @Data
 @Accessors(chain = true)
-public class Config {
-
-    /**
-     * 定时任务
-     */
-    private String cron;
+public class Config implements Serializable {
 
     /**
      * 下载位置

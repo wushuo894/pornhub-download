@@ -17,8 +17,6 @@ public class ProxyUtil {
         if (proxy.hasProxy()) {
             log.info("proxy ===> {}", url);
             request.setHttpProxy(proxy.getHost(), proxy.getPort());
-        } else {
-            log.info("not proxy ===> {}", url);
         }
     }
 }
