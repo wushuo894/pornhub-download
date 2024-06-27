@@ -1,7 +1,5 @@
 #!/bin/bash
 
-mkdir src/main/resources
-rm -rf src/main/resources/dist
 mkdir src/main/resources/dist
 cd ui
 pnpm install
