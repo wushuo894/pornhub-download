@@ -16,6 +16,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadPoolExecutor;
 
 @Path("/download")
 public class DownloadAction implements Action {
@@ -24,7 +25,7 @@ public class DownloadAction implements Action {
 
     @Override
     public void doAction(HttpServerRequest req, HttpServerResponse res) {
-        if (!downloadInfoMap.isEmpty()) {
+        if (((ThreadPoolExecutor) VideoUtil.executor).getActiveCount() > 0) {
             res.sendOk();
             return;
         }
@@ -35,14 +36,7 @@ public class DownloadAction implements Action {
                 for (Video video : videoList) {
                     String url = video.getUrl();
                     File file = video.file();
-                    DownloadInfo downloadInfo = downloadInfoMap.getOrDefault(url,
-                            new DownloadInfo()
-                                    .setStart(Boolean.FALSE)
-                                    .setEnd(Boolean.FALSE)
-                                    .setDownloadLength(0L)
-                                    .setLength(102400L)
-                    );
-                    downloadInfoMap.put(url, downloadInfo);
+                    DownloadInfo downloadInfo = downloadInfoMap.get(url);
                     if (file.exists()) {
                         downloadInfo
                                 .setLength(1024L)
