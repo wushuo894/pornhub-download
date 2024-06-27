@@ -61,7 +61,6 @@ public class ListAction implements Action {
                                     .setDownloadLength(1024L)
                                     .setStart(Boolean.TRUE)
                                     .setEnd(Boolean.TRUE);
-                            LOG.info("已存在 {}", file);
                         }
                         video.setDownloadInfo(downloadInfo);
                     }
