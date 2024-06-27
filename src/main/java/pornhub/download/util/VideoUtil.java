@@ -5,6 +5,7 @@ import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.io.StreamProgress;
 import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.core.util.ReUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpUtil;
 import cn.hutool.http.cookie.GlobalCookieManager;
@@ -18,6 +19,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import pornhub.download.action.DownloadAction;
+import pornhub.download.entity.User;
 import pornhub.download.entity.Video;
 
 import javax.script.ScriptEngine;
@@ -27,15 +30,20 @@ import java.io.OutputStream;
 import java.net.CookieManager;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+
+import static pornhub.download.Main.CONFIG;
 
 /**
  * 视频工具
  */
 public class VideoUtil {
-    private static final Log log = Log.get(VideoUtil.class);
+    private static final Log LOG = Log.get(VideoUtil.class);
     private static final Gson GSON = new Gson();
+    private static final Integer threadNum = 2;
+    private static final ExecutorService executor = Executors.newFixedThreadPool(threadNum);
 
     /**
      * 获取视频mp4地址
@@ -92,8 +100,8 @@ public class VideoUtil {
             JsonElement jsonObject = javaList.get(javaList.size() - 1);
             videoUrl = jsonObject.getAsJsonObject().get("videoUrl").getAsString();
         } catch (Exception e) {
-            log.info(url);
-            log.error(e, e.getMessage());
+            LOG.info(url);
+            LOG.error(e, e.getMessage());
             ThreadUtil.sleep(10000);
             return getMp4Url(video);
         }
@@ -106,7 +114,7 @@ public class VideoUtil {
      * @param mp4Url
      * @param file
      */
-    public static void download(String mp4Url, File file) {
+    public static void download(String mp4Url, File file, DownloadAction.DownloadInfo downloadInfo) {
         FileUtil.del(file + ".tmp");
         File tmpFile = new File(file + ".tmp");
         AtomicReference<OutputStream> outputStream = new AtomicReference<>(null);
@@ -120,33 +128,90 @@ public class VideoUtil {
                         if (!res.isOk()) {
                             return;
                         }
+
                         outputStream.set(FileUtil.getOutputStream(tmpFile));
                         inputStream.set(res.bodyStream());
                         IoUtil.copy(inputStream.get(), outputStream.get(), 81920, new StreamProgress() {
+                            long startTime;
+
                             @Override
                             public void start() {
-                                log.info("开始下载 {}", file);
+                                LOG.info("开始下载 {}", file);
+                                startTime = System.currentTimeMillis();
                             }
 
                             @Override
                             public void progress(long total, long progressSize) {
-                                System.out.print("\r" + (1.0 * progressSize / total * 100));
+                                long contentLength = res.contentLength();
+                                long currentTimeMillis = System.currentTimeMillis();
+                                long totalTime = currentTimeMillis - startTime;
+                                double downloadSpeed = progressSize / (totalTime / 1000.0) / (1024 * 1024);
+                                downloadInfo
+                                        .setSpeed(downloadSpeed)
+                                        .setLength(contentLength)
+                                        .setDownloadLength(progressSize);
                             }
 
                             @Override
                             public void finish() {
-                                log.info("下载完成 {}", file);
+                                LOG.info("下载完成 {}", file);
+                                downloadInfo.setEnd(true);
                             }
                         });
                         FileUtil.move(tmpFile, file, true);
                     });
         } catch (Exception e) {
-            log.error(e, e.getMessage());
+            downloadInfo.setEnd(true)
+                    .setError(true);
+            LOG.error(e, e.getMessage());
             tmpFile.deleteOnExit();
         } finally {
             IoUtil.close(outputStream.get());
             IoUtil.close(inputStream.get());
         }
+    }
+
+    public static synchronized void download(Video video, DownloadAction.DownloadInfo downloadInfo) {
+        File file = video.file();
+        String mp4Url = getMp4Url(video);
+        if (StrUtil.isBlank(mp4Url)) {
+            downloadInfo.setEnd(true);
+            return;
+        }
+        User user = video.getUser();
+        while (((ThreadPoolExecutor) executor).getActiveCount() > threadNum - 1) {
+            ThreadUtil.sleep(500);
+        }
+        executor.submit(() -> {
+            downloadInfo.setStart(Boolean.TRUE);
+            UserUtil.downloadAvatar(user);
+            int i = 0;
+            Long retry = CONFIG.getRetry();
+            Long retryInterval = CONFIG.getRetryInterval();
+            Boolean retryWaitDoubled = CONFIG.getRetryWaitDoubled();
+            do {
+                try {
+                    VideoUtil.download(mp4Url, file, downloadInfo);
+                    return;
+                } catch (Exception e) {
+                    LOG.error(e, e.getMessage());
+                    i++;
+                    LOG.info(String.valueOf(file));
+                    LOG.info("重试 {}", i);
+                }
+                // 重试等待时间
+                if (retryInterval > 0) {
+                    ThreadUtil.sleep(retryInterval, TimeUnit.SECONDS);
+                }
+                // 等待时间翻倍
+                if (retryWaitDoubled) {
+                    retryInterval = retryInterval * 2;
+                }
+            } while (retry < 1 || retry > i);
+            LOG.info(String.valueOf(file));
+            LOG.info("超过重试次数 {}", i);
+            downloadInfo.setEnd(Boolean.TRUE);
+        });
     }
 
 }

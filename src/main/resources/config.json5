@@ -1,8 +1,6 @@
 {
-  // 定时任务
-  "cron": "",
   // 下载位置
-  "path": "Z://Media/pornhub",
+  "path": "/video",
   // 订阅
   "url": "https://www.pornhub.com/users/wushuo894/subscriptions",
   // 重试次数 0 不重试 -1 一直重试 默认重试三次
