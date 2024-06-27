@@ -1,4 +1,4 @@
-FROM openjdk:17-jdk
+FROM openjdk:11-jdk
 COPY target/pornhub-download-jar-with-dependencies.jar /usr/app/pornhub-download-jar-with-dependencies.jar
 WORKDIR /usr/app
 VOLUME /video
