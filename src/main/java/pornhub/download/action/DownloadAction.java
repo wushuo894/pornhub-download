@@ -39,10 +39,10 @@ public class DownloadAction implements Action {
                     DownloadInfo downloadInfo = downloadInfoMap.get(url);
                     if (file.exists()) {
                         downloadInfo
-                                .setLength(1024L)
-                                .setDownloadLength(1024L)
+                                .setLength(file.length())
+                                .setDownloadLength(file.length())
+                                .setStart(Boolean.TRUE)
                                 .setEnd(Boolean.TRUE);
-                        LOG.info("已存在 {}", file);
                     }
                 }
             }
