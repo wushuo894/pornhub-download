@@ -122,6 +122,7 @@ public class VideoUtil {
                         }
                         outputStream.set(FileUtil.getOutputStream(tmpFile));
                         inputStream.set(res.bodyStream());
+                        long contentLength = res.contentLength();
                         IoUtil.copy(inputStream.get(), outputStream.get(), 81920, new StreamProgress() {
                             @Override
                             public void start() {
@@ -130,7 +131,7 @@ public class VideoUtil {
 
                             @Override
                             public void progress(long total, long progressSize) {
-                                System.out.print("\r" + (1.0 * progressSize / total * 100));
+                                System.out.print("\r" + (1.0 * progressSize / contentLength * 100));
                             }
 
                             @Override
