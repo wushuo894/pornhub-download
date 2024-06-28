@@ -1,6 +1,16 @@
 <template>
   <div class="demo-collapse">
-    <el-button @click="startDownload">开始下载</el-button>
+    <div style="display: flex; justify-content: space-between;">
+      <el-button @click="startDownload">开始下载</el-button>
+      <el-select v-model="select" placeholder="Select" style="width: 240px">
+        <el-option
+            v-for="item in selectList"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
+        />
+      </el-select>
+    </div>
     <div style="margin: 4px;"></div>
     <el-collapse accordion>
       <el-collapse-item :name="i"
@@ -25,7 +35,7 @@
             <el-progress v-else-if="video.downloadInfo.end" :percentage="100" status="success"/>
             <el-progress v-else-if="!video.downloadInfo.end"
                          :percentage="Number(((video.downloadInfo.downloadLength / video.downloadInfo.length) * 100).toFixed(2))"/>
-            <div style="display: flex;    justify-content: space-between;">
+            <div style="display: flex;justify-content: space-between;">
               <div>
                 {{ (video.downloadInfo.length / (1024 * 1024)).toFixed(2) }} MB
                 /
@@ -45,6 +55,36 @@
 
 <script setup>
 import {ref} from 'vue'
+
+const selectList = ref([
+  {
+    value: 0,
+    label: '全部',
+    fun: () => true
+  },
+  {
+    value: 1,
+    label: '待开始',
+    fun: (item) => !item.downloadInfo.start && !item.downloadInfo.end
+  },
+  {
+    value: 2,
+    label: '进行中',
+    fun: (item) => item => item.downloadInfo.start && !item.downloadInfo.end
+  },
+  {
+    value: 3,
+    label: '异常',
+    fun: (item) => item.downloadInfo.error
+  },
+  {
+    value: 4,
+    label: '已完成',
+    fun: (item) => !item.downloadInfo.error && item.downloadInfo.end
+  },
+])
+
+const select = ref(0)
 
 const list = ref([])
 
@@ -80,6 +120,7 @@ setInterval(() => {
           let done = []
 
           let videoList = it.videoList
+          videoList = videoList.filter(selectList.value[select.value].fun)
           videoList.forEach(video => {
             if (video.downloadInfo.error) {
               error.push(video)
@@ -100,6 +141,7 @@ setInterval(() => {
           return it;
         })
 
+        res = res.filter(item => item.videoList.length > 0)
 
         // 待开始
         let waitingToStart = []
