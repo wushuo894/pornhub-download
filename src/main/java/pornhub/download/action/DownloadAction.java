@@ -23,12 +23,16 @@ public class DownloadAction implements Action {
     public static final Map<String, DownloadInfo> downloadInfoMap = new HashMap<>();
     public static final Log LOG = Log.get(DownloadAction.class);
 
+    public static Boolean DOWNLOAD = Boolean.TRUE;
+
     @Override
-    public void doAction(HttpServerRequest req, HttpServerResponse res) {
-        if (((ThreadPoolExecutor) VideoUtil.executor).getActiveCount() > 0) {
+    public synchronized void doAction(HttpServerRequest req, HttpServerResponse res) {
+        int activeCount = ((ThreadPoolExecutor) VideoUtil.executor).getActiveCount();
+        if (!DOWNLOAD || activeCount > 0) {
             res.sendOk();
             return;
         }
+        DOWNLOAD = Boolean.FALSE;
         ThreadUtil.execute(() -> {
             List<ListAction.UserVO> list = ListAction.LIST;
             for (ListAction.UserVO userVO : list) {
@@ -59,6 +63,7 @@ public class DownloadAction implements Action {
                     LOG.info(video.toString());
                 }
             }
+            DOWNLOAD = Boolean.TRUE;
         });
         res.sendOk();
     }

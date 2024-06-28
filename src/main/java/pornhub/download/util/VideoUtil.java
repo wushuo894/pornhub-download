@@ -210,7 +210,10 @@ public class VideoUtil {
             } while (retry < 1 || retry > i);
             LOG.info(String.valueOf(file));
             LOG.info("超过重试次数 {}", i);
-            downloadInfo.setEnd(Boolean.TRUE);
+            downloadInfo
+                    .setSpeed(0.0)
+                    .setError(Boolean.TRUE)
+                    .setEnd(Boolean.TRUE);
         });
     }
 
