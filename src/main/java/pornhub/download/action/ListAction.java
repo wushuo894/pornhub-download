@@ -53,12 +53,13 @@ public class ListAction implements Action {
                                         .setEnd(Boolean.FALSE)
                                         .setDownloadLength(0L)
                                         .setLength(1024L)
+                                        .setSpeed(0.0)
                         );
                         DownloadAction.downloadInfoMap.put(url, downloadInfo);
                         if (file.exists()) {
                             downloadInfo
-                                    .setLength(1024L)
-                                    .setDownloadLength(1024L)
+                                    .setLength(file.length())
+                                    .setDownloadLength(file.length())
                                     .setStart(Boolean.TRUE)
                                     .setEnd(Boolean.TRUE);
                         }
