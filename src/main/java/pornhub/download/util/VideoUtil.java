@@ -160,11 +160,6 @@ public class VideoUtil {
                         });
                         FileUtil.move(tmpFile, file, Boolean.TRUE);
                     });
-        } catch (Exception e) {
-            downloadInfo.setEnd(Boolean.TRUE)
-                    .setError(Boolean.TRUE);
-            LOG.error(e, e.getMessage());
-            tmpFile.deleteOnExit();
         } finally {
             IoUtil.close(outputStream.get());
             IoUtil.close(inputStream.get());
