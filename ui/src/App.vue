@@ -19,18 +19,20 @@
           {{ info(it.videoList) }}
         </template>
         <div>
-          <el-card style="margin: 5px;" v-for="video in it.videoList">
-            <template #header>
-              <div class="card-header">
-                <span>{{ video.title }}</span>
-              </div>
-            </template>
+          <el-card shadow="never" style="margin: 3px 0;" v-for="video in it.videoList">
+            <span>{{ video.title }}</span>
             <el-progress v-if="video.downloadInfo.error" :percentage="100" status="exception"/>
             <el-progress v-else-if="video.downloadInfo.end" :percentage="100" status="success"/>
             <el-progress v-else-if="!video.downloadInfo.end"
                          :percentage="Number(((video.downloadInfo.downloadLength / video.downloadInfo.length) * 100).toFixed(2))"/>
-            大小 {{ (video.downloadInfo.length / (1024 * 1024)).toFixed(2) }} MB
-            下载速度 {{ (video.downloadInfo.speed)?.toFixed(2) }} MB/S
+            <div style="display: flex;    justify-content: space-between;">
+              <div>
+                {{ (video.downloadInfo.length / (1024 * 1024)).toFixed(2) }} MB
+                /
+                {{ (video.downloadInfo.downloadLength / (1024 * 1024)).toFixed(2) }} MB
+              </div>
+              <div>{{ (video.downloadInfo.speed)?.toFixed(2) }} MB/S</div>
+            </div>
           </el-card>
         </div>
       </el-collapse-item>
@@ -44,7 +46,6 @@
 <script setup>
 import {ref} from 'vue'
 
-const activeName = ref('1')
 const list = ref([])
 
 const page = ref({
@@ -54,10 +55,10 @@ const page = ref({
 })
 
 let info = (list) => {
-  return `待开始 ${list.filter(item => !item.downloadInfo.start && !item.downloadInfo.end).length}
-          进行中 ${list.filter(item => item.downloadInfo.start && !item.downloadInfo.end).length}
-          异常 ${list.filter(item => item.downloadInfo.error).length}
-          已完成 ${list.filter(item => !item.downloadInfo.error && item.downloadInfo.end).length}
+  return `待开始${list.filter(item => !item.downloadInfo.start && !item.downloadInfo.end).length}
+          进行中${list.filter(item => item.downloadInfo.start && !item.downloadInfo.end).length}
+          异常${list.filter(item => item.downloadInfo.error).length}
+          已完成${list.filter(item => !item.downloadInfo.error && item.downloadInfo.end).length}
           `
 }
 
@@ -69,39 +70,59 @@ setInterval(() => {
   fetch('/api/list').then(res => res.json())
       .then(res => {
         res.map(it => {
+          // 待开始
+          let waitingToStart = []
+          // 进行中
+          let underway = []
+          // 异常
+          let error = []
+          // 已完成
+          let done = []
+
           let videoList = it.videoList
-          videoList = videoList.sort((a, b) => {
-            if (a.downloadInfo.end) {
-              return 1;
+          videoList.forEach(video => {
+            if (video.downloadInfo.error) {
+              error.push(video)
+              return
             }
-            if (b.downloadInfo.end) {
-              return -1;
+            if (video.downloadInfo.end) {
+              done.push(video)
+              return
             }
-            return 0;
+            if (video.downloadInfo.start && !video.downloadInfo.end) {
+              underway.push(video)
+              return
+            }
+            waitingToStart.push(video)
           })
-          it.videoList = videoList
+
+          it.videoList = [].concat(underway, waitingToStart, error, done)
           return it;
         })
+
+
+        // 待开始
+        let waitingToStart = []
+        // 进行中
+        let underway = []
+        // 已完成
+        let done = []
+
         res.forEach(it => {
+          // 正在进行
           if (it.videoList.filter(item => item.downloadInfo.start && !item.downloadInfo.end).length > 0) {
-            it.sort = 1
+            waitingToStart.push(it)
             return
           }
-          if (it.videoList.filter(item => !item.downloadInfo.start && !item.downloadInfo.end).length > 0) {
-            it.sort = 2
+          // 已完成
+          if (it.videoList.filter(item => !item.downloadInfo.start && !item.downloadInfo.end).length < 1) {
+            done.push(it)
             return
           }
-          if (it.videoList.filter(item => item.downloadInfo.end).length > 0) {
-            it.sort = 3
-          }
+          // 待开始
+          underway.push(it)
         })
-        res = res.sort((a, b) => {
-          if (a.sort > b.sort) {
-            return 1;
-          } else {
-            return -1;
-          }
-        })
+        res = [].concat(waitingToStart, underway, done)
         page.value.totalPage = res.length % page.value.size > 0 ? Number((res.length / page.value.size).toFixed(0)) + 1 : Number((res.length / page.value.size).toFixed(0))
         list.value = res
       })
