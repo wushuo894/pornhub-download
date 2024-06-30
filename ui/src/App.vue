@@ -1,7 +1,7 @@
 <template>
   <div class="demo-collapse">
     <div style="display: flex; justify-content: space-between;">
-      <el-button @click="startDownload">开始下载</el-button>
+      <el-button @click="startDownload" :disabled="doanloadButton">开始下载</el-button>
       <el-select v-model="select" placeholder="Select" style="width: 240px">
         <el-option
             v-for="item in selectList"
@@ -55,6 +55,7 @@
 
 <script setup>
 import {ref} from 'vue'
+import {ElMessage} from "element-plus";
 
 const selectList = ref([
   {
@@ -88,6 +89,8 @@ const select = ref(0)
 
 const list = ref([])
 
+const doanloadButton = ref(true)
+
 const page = ref({
   size: 15,
   totalPage: 2,
@@ -104,12 +107,24 @@ let info = (list) => {
 
 let startDownload = () => {
   fetch('/api/download')
+      .then(res => res.json())
+      .then(res => {
+        let message = res.message;
+        if (res.code === 200) {
+          ElMessage.success(message)
+          return
+        }
+        ElMessage.error(message)
+      })
 }
 
 setInterval(() => {
   fetch('/api/list').then(res => res.json())
       .then(res => {
-        res.map(it => {
+        let data = res.data
+        doanloadButton.value = data['loadIng']
+        let dataList = data.list;
+        dataList.map(it => {
           // 待开始
           let waitingToStart = []
           // 进行中
@@ -141,7 +156,7 @@ setInterval(() => {
           return it;
         })
 
-        res = res.filter(item => item.videoList.length > 0)
+        dataList = dataList.filter(item => item.videoList.length > 0)
 
         // 待开始
         let waitingToStart = []
@@ -150,7 +165,7 @@ setInterval(() => {
         // 已完成
         let done = []
 
-        res.forEach(it => {
+        dataList.forEach(it => {
           // 正在进行
           if (it.videoList.filter(item => item.downloadInfo.start && !item.downloadInfo.end).length > 0) {
             waitingToStart.push(it)
@@ -164,9 +179,11 @@ setInterval(() => {
           // 待开始
           underway.push(it)
         })
-        res = [].concat(waitingToStart, underway, done)
-        page.value.totalPage = res.length % page.value.size > 0 ? Number((res.length / page.value.size).toFixed(0)) + 1 : Number((res.length / page.value.size).toFixed(0))
-        list.value = res
+        dataList = [].concat(waitingToStart, underway, done)
+        page.value.totalPage = dataList.length % page.value.size > 0 ?
+            Number((dataList.length / page.value.size).toFixed(0)) + 1 :
+            Number((dataList.length / page.value.size).toFixed(0))
+        list.value = dataList
       })
 }, 3000)
 </script>
