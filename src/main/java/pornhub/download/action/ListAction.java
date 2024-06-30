@@ -51,8 +51,7 @@ public class ListAction implements Action {
                     .setUser(user)
                     .setVideoList(videoList);
             LIST.add(userVO);
-            videoList.addAll(UserUtil.getVideoList(user));
-            for (Video video : videoList) {
+            for (Video video : UserUtil.getVideoList(user)) {
                 File file = video.file();
                 DownloadAction.DownloadInfo downloadInfo = new DownloadAction.DownloadInfo()
                         .setStart(Boolean.FALSE)
@@ -69,6 +68,7 @@ public class ListAction implements Action {
                             .setEnd(Boolean.TRUE);
                 }
                 video.setDownloadInfo(downloadInfo);
+                videoList.add(video);
             }
         }
         STATUS.setLoadIng(Boolean.FALSE);
