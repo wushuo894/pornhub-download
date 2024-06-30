@@ -5,13 +5,16 @@ import cn.hutool.http.server.HttpServerRequest;
 import cn.hutool.http.server.HttpServerResponse;
 import cn.hutool.http.server.action.Action;
 import cn.hutool.log.Log;
+import com.google.gson.Gson;
 import lombok.Data;
 import lombok.experimental.Accessors;
 import pornhub.download.annotation.Path;
+import pornhub.download.entity.Result;
 import pornhub.download.entity.Video;
 import pornhub.download.util.VideoUtil;
 
 import java.io.File;
+import java.io.PrintWriter;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
@@ -20,16 +23,19 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 @Path("/download")
 public class DownloadAction implements Action {
-    public static final Map<String, DownloadInfo> downloadInfoMap = new HashMap<>();
     public static final Log LOG = Log.get(DownloadAction.class);
-
+    public static final Gson GSON = new Gson();
     public static Boolean DOWNLOAD = Boolean.TRUE;
 
     @Override
     public synchronized void doAction(HttpServerRequest req, HttpServerResponse res) {
+        res.setContentType("application/json; charset=utf-8");
+        PrintWriter writer = res.getWriter();
         int activeCount = ((ThreadPoolExecutor) VideoUtil.executor).getActiveCount();
         if (!DOWNLOAD || activeCount > 0) {
-            res.sendOk();
+            writer.write(GSON.toJson(Result.error().setMessage("已经开始下载了")));
+            writer.flush();
+            writer.close();
             return;
         }
         DOWNLOAD = Boolean.FALSE;
@@ -38,34 +44,16 @@ public class DownloadAction implements Action {
             for (ListAction.UserVO userVO : list) {
                 List<Video> videoList = userVO.getVideoList();
                 for (Video video : videoList) {
-                    String url = video.getUrl();
-                    File file = video.file();
-                    DownloadInfo downloadInfo = downloadInfoMap.get(url);
-                    if (file.exists()) {
-                        downloadInfo
-                                .setLength(file.length())
-                                .setDownloadLength(file.length())
-                                .setStart(Boolean.TRUE)
-                                .setEnd(Boolean.TRUE);
-                    }
-                }
-            }
-            for (ListAction.UserVO userVO : list) {
-                List<Video> videoList = userVO.getVideoList();
-                for (Video video : videoList) {
-                    File file = video.file();
-                    if (file.exists()) {
-                        continue;
-                    }
-                    String url = video.getUrl();
-                    DownloadInfo downloadInfo = downloadInfoMap.get(url);
+                    DownloadInfo downloadInfo = video.getDownloadInfo();
                     VideoUtil.download(video, downloadInfo);
                     LOG.info(video.toString());
                 }
             }
             DOWNLOAD = Boolean.TRUE;
         });
-        res.sendOk();
+        writer.write(GSON.toJson(Result.success().setMessage("开始下载")));
+        writer.flush();
+        writer.close();
     }
 
     @Data
@@ -75,14 +63,17 @@ public class DownloadAction implements Action {
          * 总字节
          */
         private Long length;
+
         /**
          * 已下载的字节
          */
         private Long downloadLength;
+
         /**
          * 是否已经开始
          */
         private Boolean start;
+
         /**
          * 下载完成
          */

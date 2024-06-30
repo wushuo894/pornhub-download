@@ -10,6 +10,7 @@ import com.google.gson.GsonBuilder;
 import lombok.Data;
 import lombok.experimental.Accessors;
 import pornhub.download.annotation.Path;
+import pornhub.download.entity.Result;
 import pornhub.download.entity.User;
 import pornhub.download.entity.Video;
 import pornhub.download.util.UserUtil;
@@ -19,7 +20,6 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 import static pornhub.download.Main.CONFIG;
 
@@ -29,6 +29,10 @@ public class ListAction implements Action {
     public static final Gson gson = new GsonBuilder().enableComplexMapKeySerialization().create();
     public static final Log LOG = Log.get(ListAction.class);
 
+    public static final Status STATUS = new Status()
+            .setLoadIng(Boolean.TRUE)
+            .setList(LIST);
+
     /**
      * 加载出列表
      */
@@ -36,40 +40,39 @@ public class ListAction implements Action {
         List<User> subscriptions = UserUtil.getSubscriptions(CONFIG.getUrl());
         LOG.info("loadList start");
         AtomicInteger index = new AtomicInteger(0);
-        LIST = subscriptions.stream()
-                .map(it -> {
-                    LOG.info("{}/{}\t{}",
-                            index.incrementAndGet(),
-                            subscriptions.size(),
-                            it.getName());
+        for (User user : subscriptions) {
+            LOG.info("{}/{}\t{}",
+                    index.incrementAndGet(),
+                    subscriptions.size(),
+                    user.getName());
 
-                    List<Video> videoList = UserUtil.getVideoList(it);
-                    for (Video video : videoList) {
-                        String url = video.getUrl();
-                        File file = video.file();
-                        DownloadAction.DownloadInfo downloadInfo = DownloadAction.downloadInfoMap.getOrDefault(url,
-                                new DownloadAction.DownloadInfo()
-                                        .setStart(Boolean.FALSE)
-                                        .setEnd(Boolean.FALSE)
-                                        .setDownloadLength(0L)
-                                        .setLength(1024L)
-                                        .setSpeed(0.0)
-                        );
-                        DownloadAction.downloadInfoMap.put(url, downloadInfo);
-                        if (file.exists()) {
-                            downloadInfo
-                                    .setLength(file.length())
-                                    .setDownloadLength(file.length())
-                                    .setStart(Boolean.TRUE)
-                                    .setEnd(Boolean.TRUE);
-                        }
-                        video.setDownloadInfo(downloadInfo);
-                    }
-                    UserVO userVO = new UserVO();
-                    userVO.setUser(it)
-                            .setVideoList(videoList);
-                    return userVO;
-                }).collect(Collectors.toList());
+            UserVO userVO = new UserVO()
+                    .setUser(user);
+            LIST.add(userVO);
+
+            List<Video> videoList = UserUtil.getVideoList(user);
+
+            for (Video video : videoList) {
+                File file = video.file();
+                DownloadAction.DownloadInfo downloadInfo = new DownloadAction.DownloadInfo()
+                        .setStart(Boolean.FALSE)
+                        .setEnd(Boolean.FALSE)
+                        .setError(Boolean.FALSE)
+                        .setDownloadLength(0L)
+                        .setLength(1024L)
+                        .setSpeed(0.0);
+                if (file.exists()) {
+                    downloadInfo
+                            .setLength(file.length())
+                            .setDownloadLength(file.length())
+                            .setStart(Boolean.TRUE)
+                            .setEnd(Boolean.TRUE);
+                }
+                video.setDownloadInfo(downloadInfo);
+            }
+            userVO.setVideoList(videoList);
+        }
+        STATUS.setLoadIng(Boolean.FALSE);
         LOG.info("loadList end");
     }
 
@@ -88,9 +91,8 @@ public class ListAction implements Action {
     @Override
     public void doAction(HttpServerRequest req, HttpServerResponse res) {
         try {
-            String json = gson.toJson(LIST);
+            String json = gson.toJson(Result.success(STATUS));
             res.setContentType("application/json; charset=utf-8");
-            res.sendOk();
             PrintWriter writer = res.getWriter();
             writer.write(json);
             writer.flush();
@@ -98,6 +100,20 @@ public class ListAction implements Action {
         } catch (Exception e) {
             LOG.error(e);
         }
+    }
+
+    @Data
+    @Accessors(chain = true)
+    public static class Status {
+        /**
+         * 是否正在加载
+         */
+        private Boolean loadIng;
+
+        /**
+         * 列表
+         */
+        private List<UserVO> list;
     }
 
     @Data
