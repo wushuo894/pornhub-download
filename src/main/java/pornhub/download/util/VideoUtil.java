@@ -118,6 +118,7 @@ public class VideoUtil {
         File tmpFile = new File(file + ".tmp");
         AtomicReference<OutputStream> outputStream = new AtomicReference<>(null);
         AtomicReference<InputStream> inputStream = new AtomicReference<>(null);
+        AtomicReference<Boolean> ok = new AtomicReference<>(Boolean.FALSE);
         try {
             HttpRequest httpRequest = HttpUtil.createGet(mp4Url, true);
             ProxyUtil.addProxy(httpRequest);
@@ -130,24 +131,34 @@ public class VideoUtil {
 
                         outputStream.set(FileUtil.getOutputStream(tmpFile));
                         inputStream.set(res.bodyStream());
-                        IoUtil.copy(inputStream.get(), outputStream.get(), 81920, new StreamProgress() {
-                            long startTime;
 
+                        long contentLength = res.contentLength();
+                        downloadInfo
+                                .setLength(contentLength);
+
+                        IoUtil.copy(inputStream.get(), outputStream.get(), 81920, new StreamProgress() {
                             @Override
                             public void start() {
                                 LOG.info("开始下载 {}", file);
-                                startTime = System.currentTimeMillis();
+
+                                long startTime = System.currentTimeMillis();
+
+                                ThreadUtil.execute(() -> {
+                                    while (!ok.get()) {
+                                        ThreadUtil.sleep(3000);
+                                        Long downloadLength = downloadInfo.getDownloadLength();
+                                        long currentTimeMillis = System.currentTimeMillis();
+                                        long totalTime = currentTimeMillis - startTime;
+                                        double downloadSpeed = downloadLength / (totalTime / 1000.0) / (1024 * 1024);
+                                        downloadInfo.setSpeed(downloadSpeed);
+                                    }
+                                });
+
                             }
 
                             @Override
                             public void progress(long total, long progressSize) {
-                                long contentLength = res.contentLength();
-                                long currentTimeMillis = System.currentTimeMillis();
-                                long totalTime = currentTimeMillis - startTime;
-                                double downloadSpeed = progressSize / (totalTime / 1000.0) / (1024 * 1024);
                                 downloadInfo
-                                        .setSpeed(downloadSpeed)
-                                        .setLength(contentLength)
                                         .setDownloadLength(progressSize);
                             }
 
@@ -163,6 +174,7 @@ public class VideoUtil {
         } finally {
             IoUtil.close(outputStream.get());
             IoUtil.close(inputStream.get());
+            ok.set(Boolean.TRUE);
         }
     }
 
