@@ -145,8 +145,8 @@ public class VideoUtil {
 
                                 ThreadUtil.execute(() -> {
                                     while (!ok.get()) {
-                                        ThreadUtil.sleep(3000);
                                         Long downloadLength = downloadInfo.getDownloadLength();
+                                        ThreadUtil.sleep(1000);
                                         if (downloadLength < 1) {
                                             continue;
                                         }
