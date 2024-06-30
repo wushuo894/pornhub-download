@@ -46,12 +46,12 @@ public class ListAction implements Action {
                     subscriptions.size(),
                     user.getName());
 
+            List<Video> videoList = new ArrayList<>();
             UserVO userVO = new UserVO()
-                    .setUser(user);
+                    .setUser(user)
+                    .setVideoList(videoList);
             LIST.add(userVO);
-
-            List<Video> videoList = UserUtil.getVideoList(user);
-
+            videoList.addAll(UserUtil.getVideoList(user));
             for (Video video : videoList) {
                 File file = video.file();
                 DownloadAction.DownloadInfo downloadInfo = new DownloadAction.DownloadInfo()
@@ -70,7 +70,6 @@ public class ListAction implements Action {
                 }
                 video.setDownloadInfo(downloadInfo);
             }
-            userVO.setVideoList(videoList);
         }
         STATUS.setLoadIng(Boolean.FALSE);
         LOG.info("loadList end");
