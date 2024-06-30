@@ -147,6 +147,9 @@ public class VideoUtil {
                                     while (!ok.get()) {
                                         ThreadUtil.sleep(3000);
                                         Long downloadLength = downloadInfo.getDownloadLength();
+                                        if (downloadLength < 1) {
+                                            continue;
+                                        }
                                         long currentTimeMillis = System.currentTimeMillis();
                                         long totalTime = currentTimeMillis - startTime;
                                         double downloadSpeed = downloadLength / (totalTime / 1000.0) / (1024 * 1024);
