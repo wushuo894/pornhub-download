@@ -155,6 +155,7 @@ public class VideoUtil {
                                         double downloadSpeed = downloadLength / (totalTime / 1000.0) / (1024 * 1024);
                                         downloadInfo.setSpeed(downloadSpeed);
                                     }
+                                    downloadInfo.setSpeed(0.0);
                                 });
 
                             }
@@ -168,8 +169,7 @@ public class VideoUtil {
                             @Override
                             public void finish() {
                                 LOG.info("下载完成 {}", file);
-                                downloadInfo.setEnd(Boolean.TRUE)
-                                        .setSpeed(0.0);
+                                downloadInfo.setEnd(Boolean.TRUE);
                             }
                         });
                         FileUtil.move(tmpFile, file, Boolean.TRUE);
