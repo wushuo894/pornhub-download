@@ -32,6 +32,14 @@ public class DownloadAction implements Action {
         res.setContentType("application/json; charset=utf-8");
         PrintWriter writer = res.getWriter();
         int activeCount = ((ThreadPoolExecutor) VideoUtil.executor).getActiveCount();
+
+        if (ListAction.STATUS.getLoadIng()) {
+            writer.write(GSON.toJson(Result.error().setMessage("还未加载完成")));
+            writer.flush();
+            writer.close();
+            return;
+        }
+
         if (!DOWNLOAD || activeCount > 0) {
             writer.write(GSON.toJson(Result.error().setMessage("已经开始下载了")));
             writer.flush();
