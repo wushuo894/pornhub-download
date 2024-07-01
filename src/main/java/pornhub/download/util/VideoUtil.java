@@ -147,13 +147,13 @@ public class VideoUtil {
                                         if (downloadLength < 1) {
                                             continue;
                                         }
-                                        ThreadUtil.sleep(5000);
+                                        ThreadUtil.sleep(1000);
                                         long current = downloadInfo.getDownloadLength() - downloadLength;
                                         if (current < 1) {
                                             downloadInfo.setSpeed(0.0);
                                             continue;
                                         }
-                                        double downloadSpeed = current / 5.0 / (1024 * 1024);
+                                        double downloadSpeed = current / 1.0 / (1024 * 1024);
                                         downloadInfo.setSpeed(downloadSpeed);
                                     }
                                     downloadInfo.setSpeed(0.0);
