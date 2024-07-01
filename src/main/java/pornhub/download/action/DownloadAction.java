@@ -52,11 +52,11 @@ public class DownloadAction implements Action {
             for (ListAction.UserVO userVO : list) {
                 List<Video> videoList = userVO.getVideoList();
                 for (Video video : videoList) {
-//                    File file = video.file();
-//                    if (file.exists()) {
-//                        LOG.info("{} 已存在", file);
-//                        continue;
-//                    }
+                    File file = video.file();
+                    if (file.exists()) {
+                        LOG.info("{} 已存在", file);
+                        continue;
+                    }
                     DownloadInfo downloadInfo = video.getDownloadInfo();
                     VideoUtil.download(video, downloadInfo);
                     LOG.info(video.toString());

@@ -130,12 +130,6 @@ public class VideoUtil {
                         }
 
                         long contentLength = res.contentLength();
-                        if (file.length() == contentLength) {
-                            LOG.info("{} 已存在", file);
-                            return;
-                        }
-//                        FileUtil.del(file);
-
                         outputStream.set(FileUtil.getOutputStream(tmpFile));
                         inputStream.set(res.bodyStream());
 
