@@ -141,18 +141,19 @@ public class VideoUtil {
                             public void start() {
                                 LOG.info("开始下载 {}", file);
 
-                                long startTime = System.currentTimeMillis();
-
                                 ThreadUtil.execute(() -> {
                                     while (!ok.get()) {
                                         Long downloadLength = downloadInfo.getDownloadLength();
-                                        ThreadUtil.sleep(1000);
                                         if (downloadLength < 1) {
                                             continue;
                                         }
-                                        long currentTimeMillis = System.currentTimeMillis();
-                                        long totalTime = currentTimeMillis - startTime;
-                                        double downloadSpeed = downloadLength / (totalTime / 1000.0) / (1024 * 1024);
+                                        ThreadUtil.sleep(5000);
+                                        long current = downloadInfo.getDownloadLength() - downloadLength;
+                                        if (current < 1) {
+                                            downloadInfo.setSpeed(0.0);
+                                            continue;
+                                        }
+                                        double downloadSpeed = current / 5.0 / (1024 * 1024);
                                         downloadInfo.setSpeed(downloadSpeed);
                                     }
                                     downloadInfo.setSpeed(0.0);
