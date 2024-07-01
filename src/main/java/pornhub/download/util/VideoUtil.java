@@ -134,7 +134,7 @@ public class VideoUtil {
                             LOG.info("{} 已存在", file);
                             return;
                         }
-                        FileUtil.del(file);
+//                        FileUtil.del(file);
 
                         outputStream.set(FileUtil.getOutputStream(tmpFile));
                         inputStream.set(res.bodyStream());
