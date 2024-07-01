@@ -113,7 +113,7 @@ public class VideoUtil {
      * @param mp4Url
      * @param file
      */
-    public static void download(String mp4Url, File file, DownloadAction.DownloadInfo downloadInfo) {
+    public static void download(String mp4Url, File file, DownloadAction.DownloadInfo downloadInfo) throws Exception {
         FileUtil.del(file + ".tmp");
         File tmpFile = new File(file + ".tmp");
         AtomicReference<OutputStream> outputStream = new AtomicReference<>(null);
@@ -135,7 +135,6 @@ public class VideoUtil {
                         long contentLength = res.contentLength();
                         downloadInfo
                                 .setLength(contentLength);
-
                         IoUtil.copy(inputStream.get(), outputStream.get(), 81920, new StreamProgress() {
                             @Override
                             public void start() {
@@ -158,7 +157,6 @@ public class VideoUtil {
                                     }
                                     downloadInfo.setSpeed(0.0);
                                 });
-
                             }
 
                             @Override
@@ -173,6 +171,9 @@ public class VideoUtil {
                                 downloadInfo.setEnd(Boolean.TRUE);
                             }
                         });
+                        if (tmpFile.length() != contentLength) {
+                            throw new RuntimeException("文件校验异常");
+                        }
                         FileUtil.move(tmpFile, file, Boolean.TRUE);
                     });
         } catch (Exception e) {
