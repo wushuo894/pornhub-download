@@ -175,6 +175,8 @@ public class VideoUtil {
                         });
                         FileUtil.move(tmpFile, file, Boolean.TRUE);
                     });
+        } catch (Exception e) {
+            throw e;
         } finally {
             IoUtil.close(outputStream.get());
             IoUtil.close(inputStream.get());
