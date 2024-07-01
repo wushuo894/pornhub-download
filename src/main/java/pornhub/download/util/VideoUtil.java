@@ -125,6 +125,11 @@ public class VideoUtil {
             httpRequest
                     .timeout(-1)
                     .then(res -> {
+                        long contentLength = res.contentLength();
+                        if (file.length() == contentLength) {
+                            LOG.info("{} 已存在", file);
+                            return;
+                        }
                         if (!res.isOk()) {
                             return;
                         }
@@ -132,7 +137,7 @@ public class VideoUtil {
                         outputStream.set(FileUtil.getOutputStream(tmpFile));
                         inputStream.set(res.bodyStream());
 
-                        long contentLength = res.contentLength();
+
                         downloadInfo
                                 .setLength(contentLength);
                         IoUtil.copy(inputStream.get(), outputStream.get(), 81920, new StreamProgress() {
