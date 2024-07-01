@@ -101,7 +101,7 @@ public class VideoUtil {
         } catch (Exception e) {
             LOG.info(url);
             LOG.error(e, e.getMessage());
-            ThreadUtil.sleep(10000);
+            ThreadUtil.sleep(3000);
             return getMp4Url(video);
         }
         return videoUrl;

@@ -95,7 +95,7 @@ public class UserUtil {
                                 .setAvatar(src);
                     }).filter(Objects::nonNull).collect(Collectors.toList());
         } catch (Exception e) {
-            ThreadUtil.sleep(10000);
+            ThreadUtil.sleep(3000);
             return getSubscriptions(url);
         }
     }
@@ -170,7 +170,7 @@ public class UserUtil {
 
             return videoList;
         } catch (Exception e) {
-            ThreadUtil.sleep(10000);
+            ThreadUtil.sleep(3000);
             return getVideoList(user);
         }
     }
