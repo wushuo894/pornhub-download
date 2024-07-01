@@ -204,7 +204,9 @@ public class VideoUtil {
             ThreadUtil.sleep(500);
         }
         executor.submit(() -> {
-            downloadInfo.setStart(Boolean.TRUE);
+            downloadInfo.setStart(Boolean.TRUE)
+                    .setEnd(Boolean.FALSE)
+                    .setError(Boolean.FALSE);
             UserUtil.downloadAvatar(user);
             int i = 0;
             Long retry = CONFIG.getRetry();
