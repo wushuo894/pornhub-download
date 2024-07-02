@@ -23,7 +23,7 @@ public class Test {
 
     public static void main(String[] args) {
         int threadNum = 8;
-        List<File> files = ls("/Volumes/wushuo/Media/pornhub/BadCuteGirl");
+        List<File> files = ls("G:\\test");
         ExecutorService executor = Executors.newFixedThreadPool(threadNum);
         CountDownLatch countDownLatch = new CountDownLatch(files.size());
         for (File file : files) {
@@ -37,7 +37,6 @@ public class Test {
                 ProcessBuilder processBuilder = new ProcessBuilder("ffmpeg",
                         "-v", "error",
                         "-i", file.toString(),
-                        "-map", "0:1",
                         "-f", "null", "-");
                 try {
                     Process process = processBuilder.start();
@@ -61,6 +60,7 @@ public class Test {
             LOG.error(e);
         }
         LOG.info("完成");
+        executor.shutdown();
     }
 
     public static List<File> ls(String path) {
