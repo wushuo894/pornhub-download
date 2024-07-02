@@ -3,11 +3,13 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.core.util.ObjectUtil;
+import cn.hutool.log.Log;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -17,35 +19,48 @@ import java.util.stream.Stream;
 import static pornhub.download.Main.CONFIG;
 
 public class Test {
+    public static final Log LOG = Log.get(Test.class);
+
     public static void main(String[] args) {
-        List<File> files = ls("/Volumes/wushuo/Media/pornhub");
-        ExecutorService executor = Executors.newFixedThreadPool(8);
+        int threadNum = 8;
+        List<File> files = ls("/Volumes/wushuo/Media/pornhub/BadCuteGirl");
+        ExecutorService executor = Executors.newFixedThreadPool(threadNum);
+        CountDownLatch countDownLatch = new CountDownLatch(files.size());
         for (File file : files) {
             if (!"mp4".equals(FileTypeUtil.getType(file))) {
                 continue;
             }
-            while (((ThreadPoolExecutor) executor).getActiveCount() > 8 - 1) {
+            while (((ThreadPoolExecutor) executor).getActiveCount() > threadNum - 1) {
                 ThreadUtil.sleep(500);
             }
             executor.submit(() -> {
                 ProcessBuilder processBuilder = new ProcessBuilder("ffmpeg",
                         "-v", "error",
                         "-i", file.toString(),
+                        "-map", "0:1",
                         "-f", "null", "-");
                 try {
                     Process process = processBuilder.start();
                     String s = IoUtil.readUtf8(process.getErrorStream());
                     if (s.contains("Error")) {
-                        System.out.println("error\t" + file);
+                        LOG.info("error {}", file);
                         FileUtil.del(file);
                     } else {
-                        System.out.println("ok\t" + file);
+                        LOG.info("ok {}", file);
                     }
                 } catch (IOException e) {
-                    throw new RuntimeException(e);
+                    LOG.error(e);
                 }
+                countDownLatch.countDown();
+                LOG.info("{} / {}", files.size(), countDownLatch.getCount());
             });
         }
+        try {
+            countDownLatch.await();
+        } catch (InterruptedException e) {
+            LOG.error(e);
+        }
+        LOG.info("完成");
     }
 
     public static List<File> ls(String path) {
