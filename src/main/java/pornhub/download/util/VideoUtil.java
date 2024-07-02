@@ -25,7 +25,6 @@ import pornhub.download.entity.Video;
 
 import javax.script.ScriptEngine;
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.CookieManager;
@@ -171,21 +170,24 @@ public class VideoUtil {
                             public void finish() {
                             }
                         });
-                        ProcessBuilder processBuilder = new ProcessBuilder("/usr/app/ffmpeg-7.0.1-amd64-static/ffmpeg", "-v", "error", "-i", tmpFile.toString(), "-f", "null", "-");
-                        try {
-                            Process process = processBuilder.start();
-                            String s = IoUtil.readUtf8(process.getErrorStream());
-                            process.waitFor();
-                            if (s.contains("Error")) {
-                                LOG.info("视频异常 {}", file);
-                                return;
-                            }
-                            LOG.info("下载完成 {}", file);
-                            downloadInfo.setEnd(Boolean.TRUE);
-                            FileUtil.move(tmpFile, file, Boolean.TRUE);
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
-                        }
+                        LOG.info("下载完成 {}", file);
+                        downloadInfo.setEnd(Boolean.TRUE);
+                        FileUtil.move(tmpFile, file, Boolean.TRUE);
+//                        ProcessBuilder processBuilder = new ProcessBuilder("/usr/app/ffmpeg-7.0.1-amd64-static/ffmpeg", "-v", "error", "-i", tmpFile.toString(), "-f", "null", "-");
+//                        try {
+//                            Process process = processBuilder.start();
+//                            String s = IoUtil.readUtf8(process.getErrorStream());
+//                            process.waitFor();
+//                            if (s.contains("Error")) {
+//                                LOG.info("视频异常 {}", file);
+//                                return;
+//                            }
+//                            LOG.info("下载完成 {}", file);
+//                            downloadInfo.setEnd(Boolean.TRUE);
+//                            FileUtil.move(tmpFile, file, Boolean.TRUE);
+//                        } catch (Exception e) {
+//                            throw new RuntimeException(e);
+//                        }
                     });
         } catch (RuntimeException e) {
             throw e;
