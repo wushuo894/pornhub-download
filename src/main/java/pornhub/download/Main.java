@@ -54,14 +54,17 @@ public class Main {
             server.addAction("/api" + path.value(), (Action) action);
         }
 
-        ProcessBuilder processBuilder = new ProcessBuilder("tar", "-xvf", "/usr/app/ffmpeg-release-amd64-static.tar.xz");
-        processBuilder.directory(new File("/usr/app/"));
-        try {
-            processBuilder.start().waitFor();
-        } catch (Exception e) {
-            LOG.error(e);
-        }
+        boolean b = Boolean.parseBoolean(env.getOrDefault("VERIFY", "FALSE"));
 
+        if (b) {
+            ProcessBuilder processBuilder = new ProcessBuilder("tar", "-xvf", "/usr/app/ffmpeg-release-amd64-static.tar.xz");
+            processBuilder.directory(new File("/usr/app/"));
+            try {
+                processBuilder.start().waitFor();
+            } catch (Exception e) {
+                LOG.error(e);
+            }
+        }
         ThreadUtil.execute(server::start);
     }
 }
