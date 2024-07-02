@@ -137,7 +137,7 @@ public class VideoUtil {
 
                         downloadInfo
                                 .setLength(contentLength);
-                        IoUtil.copy(inputStream.get(), outputStream.get(), 81920, new StreamProgress() {
+                        IoUtil.copy(inputStream.get(), outputStream.get(), 81920, contentLength, new StreamProgress() {
                             @Override
                             public void start() {
                                 LOG.info("开始下载 {}", file);
@@ -171,6 +171,10 @@ public class VideoUtil {
                             public void finish() {
                             }
                         });
+                        if (downloadInfo.getDownloadLength() != contentLength) {
+                            LOG.info("下载时出现异常");
+                            return;
+                        }
 
                         Map<String, String> env = System.getenv();
                         boolean b = Boolean.parseBoolean(env.getOrDefault("VERIFY", "FALSE"));
