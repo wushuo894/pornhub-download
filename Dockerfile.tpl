@@ -5,6 +5,7 @@ WORKDIR /usr/app
 VOLUME /video
 VOLUME /config
 ENV PORT="7093"
+ENV VERIFY="FALSE"
 ENV CONFIG="/config"
 ENV TZ="Asia/Shanghai"
 EXPOSE 7093
