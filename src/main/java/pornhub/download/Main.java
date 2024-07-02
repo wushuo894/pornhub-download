@@ -7,6 +7,7 @@ import cn.hutool.core.util.*;
 import cn.hutool.http.HttpUtil;
 import cn.hutool.http.server.SimpleServer;
 import cn.hutool.http.server.action.Action;
+import cn.hutool.log.Log;
 import com.google.gson.Gson;
 import pornhub.download.action.RootAction;
 import pornhub.download.annotation.Path;
@@ -22,6 +23,7 @@ import java.util.concurrent.Executors;
 
 public class Main {
 
+    public static final Log LOG = Log.get(Main.class);
     public static Config CONFIG = new Config();
 
     public static void main(String[] args) {
@@ -50,6 +52,14 @@ public class Main {
             }
             Object action = ReflectUtil.newInstanceIfPossible(aClass);
             server.addAction("/api" + path.value(), (Action) action);
+        }
+
+        ProcessBuilder processBuilder = new ProcessBuilder("tar", "-xvf", "/usr/app/ffmpeg-release-amd64-static.tar.xz");
+        processBuilder.directory(new File("/usr/app/"));
+        try {
+            processBuilder.start().waitFor();
+        } catch (Exception e) {
+            LOG.error(e);
         }
 
         ThreadUtil.execute(server::start);
