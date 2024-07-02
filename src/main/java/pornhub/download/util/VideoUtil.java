@@ -25,6 +25,7 @@ import pornhub.download.entity.Video;
 
 import javax.script.ScriptEngine;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.CookieManager;
@@ -170,15 +171,23 @@ public class VideoUtil {
                             public void finish() {
                             }
                         });
-                        if (tmpFile.length() != contentLength) {
-                            LOG.info("文件校验异常", file);
-                            throw new RuntimeException("文件校验异常");
+                        ProcessBuilder processBuilder = new ProcessBuilder("/usr/app/ffmpeg-7.0.1-amd64-static/ffmpeg", "-v", "error", "-i", tmpFile.toString(), "-f", "null", "-");
+                        try {
+                            Process process = processBuilder.start();
+                            String s = IoUtil.readUtf8(process.getErrorStream());
+                            process.waitFor();
+                            if (s.contains("Error")) {
+                                LOG.info("视频异常 {}", file);
+                                return;
+                            }
+                            LOG.info("下载完成 {}", file);
+                            downloadInfo.setEnd(Boolean.TRUE);
+                            FileUtil.move(tmpFile, file, Boolean.TRUE);
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
                         }
-                        LOG.info("下载完成 {}", file);
-                        downloadInfo.setEnd(Boolean.TRUE);
-                        FileUtil.move(tmpFile, file, Boolean.TRUE);
                     });
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             throw e;
         } finally {
             IoUtil.close(outputStream.get());
@@ -210,7 +219,9 @@ public class VideoUtil {
             do {
                 try {
                     VideoUtil.download(mp4Url, file, downloadInfo);
-                    return;
+                    if (downloadInfo.getEnd()) {
+                        return;
+                    }
                 } catch (Exception e) {
                     LOG.error(e, e.getMessage());
                     i++;
