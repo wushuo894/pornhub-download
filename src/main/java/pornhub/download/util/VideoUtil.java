@@ -168,13 +168,14 @@ public class VideoUtil {
 
                             @Override
                             public void finish() {
-                                LOG.info("下载完成 {}", file);
-                                downloadInfo.setEnd(Boolean.TRUE);
                             }
                         });
                         if (tmpFile.length() != contentLength) {
+                            LOG.info("文件校验异常", file);
                             throw new RuntimeException("文件校验异常");
                         }
+                        LOG.info("下载完成 {}", file);
+                        downloadInfo.setEnd(Boolean.TRUE);
                         FileUtil.move(tmpFile, file, Boolean.TRUE);
                     });
         } catch (Exception e) {
