@@ -59,7 +59,8 @@ public class ListAction implements Action {
                         .setError(Boolean.FALSE)
                         .setDownloadLength(0L)
                         .setLength(1024L)
-                        .setSpeed(0.0);
+                        .setSpeed(0.0)
+                        .setTimeRemaining(99999.0);
                 if (file.exists()) {
                     downloadInfo
                             .setLength(file.length())

@@ -154,7 +154,7 @@ public class VideoUtil {
                                         long current = currentDownloadLength - downloadLength;
                                         if (current < 1) {
                                             downloadInfo.setSpeed(0.0)
-                                                    .setTimeRemaining(999999.0);
+                                                    .setTimeRemaining(99999.0);
                                             continue;
                                         }
                                         double timeRemaining = (((length - currentDownloadLength) * 1.0) / current) * 60;
