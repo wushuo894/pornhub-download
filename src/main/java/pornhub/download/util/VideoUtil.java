@@ -144,18 +144,23 @@ public class VideoUtil {
 
                                 ThreadUtil.execute(() -> {
                                     while (!ok.get()) {
+                                        Long length = downloadInfo.getLength();
                                         Long downloadLength = downloadInfo.getDownloadLength();
                                         if (downloadLength < 1) {
                                             continue;
                                         }
                                         ThreadUtil.sleep(1000);
-                                        long current = downloadInfo.getDownloadLength() - downloadLength;
+                                        Long currentDownloadLength = downloadInfo.getDownloadLength();
+                                        long current = currentDownloadLength - downloadLength;
                                         if (current < 1) {
-                                            downloadInfo.setSpeed(0.0);
+                                            downloadInfo.setSpeed(0.0)
+                                                    .setTimeRemaining(999999.0);
                                             continue;
                                         }
+                                        double timeRemaining = (((length - currentDownloadLength) * 1.0) / current) * 60;
                                         double downloadSpeed = current / 1.0 / (1024 * 1024);
-                                        downloadInfo.setSpeed(downloadSpeed);
+                                        downloadInfo.setSpeed(downloadSpeed)
+                                                .setTimeRemaining(timeRemaining);
                                     }
                                     downloadInfo.setSpeed(0.0);
                                 });
