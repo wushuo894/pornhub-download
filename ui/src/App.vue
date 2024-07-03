@@ -41,7 +41,10 @@
                 /
                 {{ (video.downloadInfo.downloadLength / (1024 * 1024)).toFixed(2) }} MB
               </div>
-              <div>{{ (video.downloadInfo.speed)?.toFixed(2) }} MB/S</div>
+              <div>
+                剩余 {{ video.downloadInfo.timeRemaining?.toFixed(2) }} 分钟
+                {{ (video.downloadInfo.speed)?.toFixed(2) }} MB/S
+              </div>
             </div>
           </el-card>
         </div>

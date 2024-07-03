@@ -101,5 +101,10 @@ public class DownloadAction implements Action {
          * 下载速度
          */
         private Double speed;
+
+        /**
+         * 剩余时间
+         */
+        private Double timeRemaining;
     }
 }
