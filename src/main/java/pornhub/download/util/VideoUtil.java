@@ -160,7 +160,7 @@ public class VideoUtil {
                                         }
                                         long residue = length - currentDownloadLength;
                                         if (residue > 0) {
-                                            timeRemaining = ((residue * 1.0) / current) * 60;
+                                            timeRemaining = ((residue * 1.0) / current) / 60;
                                         }
                                         double downloadSpeed = current / 1.0 / (1024 * 1024);
                                         downloadInfo.setSpeed(downloadSpeed)
