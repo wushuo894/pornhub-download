@@ -152,12 +152,16 @@ public class VideoUtil {
                                         ThreadUtil.sleep(1000);
                                         Long currentDownloadLength = downloadInfo.getDownloadLength();
                                         long current = currentDownloadLength - downloadLength;
+                                        double timeRemaining = 99999.0;
                                         if (current < 1) {
                                             downloadInfo.setSpeed(0.0)
-                                                    .setTimeRemaining(99999.0);
+                                                    .setTimeRemaining(timeRemaining);
                                             continue;
                                         }
-                                        double timeRemaining = (((length - currentDownloadLength) * 1.0) / current) * 60;
+                                        long residue = length - currentDownloadLength;
+                                        if (residue > 0) {
+                                            timeRemaining = ((residue * 1.0) / current) * 60;
+                                        }
                                         double downloadSpeed = current / 1.0 / (1024 * 1024);
                                         downloadInfo.setSpeed(downloadSpeed)
                                                 .setTimeRemaining(timeRemaining);
