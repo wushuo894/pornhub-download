@@ -1,7 +1,7 @@
 <template>
   <div class="demo-collapse">
     <div style="display: flex; justify-content: space-between;">
-      <el-button @click="startDownload" :disabled="doanloadButton">开始下载</el-button>
+      <el-button @click="startDownload" :disabled="downloadButton">开始下载</el-button>
       <el-select v-model="select" placeholder="Select" style="width: 240px">
         <el-option
             v-for="item in selectList"
@@ -60,6 +60,29 @@
 import {ref} from 'vue'
 import {ElMessage} from "element-plus";
 
+/**
+ * 待开始
+ * @param item
+ * @returns {boolean}
+ */
+let waitingToStartFilter = item => !item.downloadInfo.start && !item.downloadInfo.end
+/**
+ * 进行中
+ * @param item
+ * @returns {boolean}
+ */
+let underwayFilter = item => item.downloadInfo.start && !item.downloadInfo.end
+/**
+ * 异常
+ */
+let errorFilter = item => item.downloadInfo.error
+/**
+ * 已完成
+ * @param item
+ * @returns {false}
+ */
+let doneFilter = (item) => !item.downloadInfo.error && item.downloadInfo.end
+
 const selectList = ref([
   {
     value: 0,
@@ -69,22 +92,22 @@ const selectList = ref([
   {
     value: 1,
     label: '待开始',
-    fun: (item) => !item.downloadInfo.start && !item.downloadInfo.end
+    fun: waitingToStartFilter
   },
   {
     value: 2,
     label: '进行中',
-    fun: (item) => item => item.downloadInfo.start && !item.downloadInfo.end
+    fun: underwayFilter
   },
   {
     value: 3,
     label: '异常',
-    fun: (item) => item.downloadInfo.error
+    fun: errorFilter
   },
   {
     value: 4,
     label: '已完成',
-    fun: (item) => !item.downloadInfo.error && item.downloadInfo.end
+    fun: doneFilter
   },
 ])
 
@@ -92,7 +115,7 @@ const select = ref(0)
 
 const list = ref([])
 
-const doanloadButton = ref(true)
+const downloadButton = ref(true)
 
 const page = ref({
   size: 15,
@@ -101,10 +124,10 @@ const page = ref({
 })
 
 let info = (list) => {
-  return `待开始${list.filter(item => !item.downloadInfo.start && !item.downloadInfo.end).length}
-          进行中${list.filter(item => item.downloadInfo.start && !item.downloadInfo.end).length}
-          异常${list.filter(item => item.downloadInfo.error).length}
-          已完成${list.filter(item => !item.downloadInfo.error && item.downloadInfo.end).length}
+  return `待开始${list.filter(waitingToStartFilter).length}
+          进行中${list.filter(underwayFilter).length}
+          异常${list.filter(errorFilter).length}
+          已完成${list.filter(doneFilter).length}
           `
 }
 
@@ -125,7 +148,7 @@ setInterval(() => {
   fetch('/api/list').then(res => res.json())
       .then(res => {
         let data = res.data
-        doanloadButton.value = data['loadIng']
+        downloadButton.value = data['loadIng']
         let dataList = data.list;
         dataList.map(it => {
           // 待开始
@@ -170,12 +193,12 @@ setInterval(() => {
 
         dataList.forEach(it => {
           // 正在进行
-          if (it.videoList.filter(item => item.downloadInfo.start && !item.downloadInfo.end).length > 0) {
+          if (it.videoList.filter(underwayFilter).length > 0) {
             waitingToStart.push(it)
             return
           }
           // 已完成
-          if (it.videoList.filter(item => !item.downloadInfo.start && !item.downloadInfo.end).length < 1) {
+          if (it.videoList.filter(doneFilter).length < 1) {
             done.push(it)
             return
           }
