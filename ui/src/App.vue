@@ -163,19 +163,19 @@ setInterval(() => {
           let videoList = it.videoList
           videoList = videoList.filter(selectList.value[select.value].fun)
           videoList.forEach(video => {
-            if (video.downloadInfo.error) {
+            if (underwayFilter(video)) {
+              underway.push(video)
+              return;
+            }
+            if (waitingToStartFilter(video)) {
+              waitingToStart.push(video)
+              return;
+            }
+            if (errorFilter(video)) {
               error.push(video)
               return
             }
-            if (video.downloadInfo.end) {
-              done.push(video)
-              return
-            }
-            if (video.downloadInfo.start && !video.downloadInfo.end) {
-              underway.push(video)
-              return
-            }
-            waitingToStart.push(video)
+            done.push(video)
           })
 
           it.videoList = [].concat(underway, waitingToStart, error, done)
@@ -184,28 +184,29 @@ setInterval(() => {
 
         dataList = dataList.filter(item => item.videoList.length > 0)
 
-        // 待开始
-        let waitingToStart = []
         // 进行中
         let underway = []
+        // 待开始
+        let waitingToStart = []
         // 已完成
         let done = []
 
         dataList.forEach(it => {
+          let videoList = it.videoList;
           // 正在进行
-          if (it.videoList.filter(underwayFilter).length > 0) {
+          if (videoList.filter(underwayFilter).length > 0) {
+            underway.push(it)
+            return
+          }
+          // 待开始
+          if (videoList.filter(waitingToStartFilter).length > 0) {
             waitingToStart.push(it)
             return
           }
           // 已完成
-          if (it.videoList.filter(doneFilter).length < 1) {
-            done.push(it)
-            return
-          }
-          // 待开始
-          underway.push(it)
+          done.push(it)
         })
-        dataList = [].concat(waitingToStart, underway, done)
+        dataList = [].concat(underway, waitingToStart, done)
         page.value.totalPage = dataList.length % page.value.size > 0 ?
             Number((dataList.length / page.value.size).toFixed(0)) + 1 :
             Number((dataList.length / page.value.size).toFixed(0))
