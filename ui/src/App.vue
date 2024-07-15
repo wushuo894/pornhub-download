@@ -28,11 +28,10 @@
           <div style="width: 8px;"></div>
           {{ info(it['videoList']) }}
         </template>
-        <div>
+        <div v-if="collapseValue === i">
           <el-card shadow="never"
                    style="margin: 3px 0;"
-                   v-for="video in it['videoList'].filter((_,index) => index <= 10 || showResidue)"
-                   v-if="collapseValue === i">
+                   v-for="video in it['videoList'].filter((_,index) => index <= 10 || showResidue)">
             <span>{{ video.title }}</span>
             <el-progress v-if="video.downloadInfo.error" :percentage="100" status="exception"/>
             <el-progress v-else-if="video.downloadInfo.end" :percentage="100" status="success"/>
