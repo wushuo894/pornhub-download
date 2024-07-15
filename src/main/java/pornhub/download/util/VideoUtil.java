@@ -43,7 +43,6 @@ import static pornhub.download.Main.CONFIG;
 public class VideoUtil {
     private static final Log LOG = Log.get(VideoUtil.class);
     private static final Gson GSON = new Gson();
-    public static ExecutorService executor;
 
     /**
      * 获取视频mp4地址
@@ -227,10 +226,7 @@ public class VideoUtil {
             return;
         }
         User user = video.getUser();
-        while (((ThreadPoolExecutor) executor).getActiveCount() > CONFIG.getThreadNum() - 1) {
-            ThreadUtil.sleep(500);
-        }
-        executor.submit(() -> {
+        ExecutorUtil.submit(() -> {
             downloadInfo.setStart(Boolean.TRUE)
                     .setEnd(Boolean.FALSE)
                     .setError(Boolean.FALSE);

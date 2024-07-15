@@ -13,6 +13,7 @@ import pornhub.download.annotation.Path;
 import pornhub.download.entity.Result;
 import pornhub.download.entity.User;
 import pornhub.download.entity.Video;
+import pornhub.download.util.ExecutorUtil;
 import pornhub.download.util.UserUtil;
 
 import java.io.File;
@@ -41,37 +42,40 @@ public class ListAction implements Action {
         LOG.info("loadList start");
         AtomicInteger index = new AtomicInteger(0);
         for (User user : subscriptions) {
-            LOG.info("{}/{}\t{}",
-                    index.incrementAndGet(),
-                    subscriptions.size(),
-                    user.getName());
+            ExecutorUtil.submit(() -> {
+                LOG.info("{}/{}\t{}",
+                        index.incrementAndGet(),
+                        subscriptions.size(),
+                        user.getName());
 
-            List<Video> videoList = new ArrayList<>();
-            UserVO userVO = new UserVO()
-                    .setUser(user)
-                    .setVideoList(videoList);
-            LIST.add(userVO);
-            for (Video video : UserUtil.getVideoList(user)) {
-                File file = video.file();
-                DownloadAction.DownloadInfo downloadInfo = new DownloadAction.DownloadInfo()
-                        .setStart(Boolean.FALSE)
-                        .setEnd(Boolean.FALSE)
-                        .setError(Boolean.FALSE)
-                        .setDownloadLength(0L)
-                        .setLength(1024L)
-                        .setSpeed(0.0)
-                        .setTimeRemaining(99999.0);
-                if (file.exists()) {
-                    downloadInfo
-                            .setLength(file.length())
-                            .setDownloadLength(file.length())
-                            .setStart(Boolean.TRUE)
-                            .setEnd(Boolean.TRUE);
+                List<Video> videoList = new ArrayList<>();
+                UserVO userVO = new UserVO()
+                        .setUser(user)
+                        .setVideoList(videoList);
+                LIST.add(userVO);
+                for (Video video : UserUtil.getVideoList(user)) {
+                    File file = video.file();
+                    DownloadAction.DownloadInfo downloadInfo = new DownloadAction.DownloadInfo()
+                            .setStart(Boolean.FALSE)
+                            .setEnd(Boolean.FALSE)
+                            .setError(Boolean.FALSE)
+                            .setDownloadLength(0L)
+                            .setLength(1024L)
+                            .setSpeed(0.0)
+                            .setTimeRemaining(99999.0);
+                    if (file.exists()) {
+                        downloadInfo
+                                .setLength(file.length())
+                                .setDownloadLength(file.length())
+                                .setStart(Boolean.TRUE)
+                                .setEnd(Boolean.TRUE);
+                    }
+                    video.setDownloadInfo(downloadInfo);
+                    videoList.add(video);
                 }
-                video.setDownloadInfo(downloadInfo);
-                videoList.add(video);
-            }
+            });
         }
+        ExecutorUtil.allAwait();
         STATUS.setLoadIng(Boolean.FALSE);
         LOG.info("loadList end");
     }
