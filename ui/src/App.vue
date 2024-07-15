@@ -2,7 +2,7 @@
   <div class="demo-collapse">
     <div style="display: flex; justify-content: space-between;">
       <el-button @click="startDownload" :disabled="downloadButton">开始下载</el-button>
-      <el-select v-model="select" placeholder="Select" style="width: 240px">
+      <el-select v-model="select" placeholder="Select" style="width: 240px" @change="selectChange">
         <el-option
             v-for="item in selectList"
             :key="item.value"
@@ -51,7 +51,7 @@
       </el-collapse-item>
     </el-collapse>
     <div style="margin: 4px;"></div>
-    <el-pagination background layout="prev, pager, next" v-model:page-size="page.size" :total="list.length"
+    <el-pagination background layout="prev, pager, next" v-model:page-size="page.size" :total="page.total"
                    v-model:current-page="page.currentPage" default-current-page="1" @change="pageChange"/>
   </div>
 </template>
@@ -123,8 +123,8 @@ const pageList = ref([])
 
 const page = ref({
   size: 15,
-  totalPage: 2,
   currentPage: 1,
+  total: 1
 })
 
 let info = (list) => {
@@ -148,12 +148,74 @@ let startDownload = () => {
       })
 }
 
-let pageChange = () => {
+let selectChange = () => {
+  page.value.currentPage = 1
+  pageChange()
+}
+
+let pageChange = async () => {
   let size = page.value.size
   let currentPage = page.value.currentPage
   let start = (size * (currentPage - 1))
   let end = size * (currentPage - 1) + size
-  pageList.value = list.value.slice(start, end)
+
+  // 进行中
+  let underwayAll = []
+  // 待开始
+  let waitingToStartAll = []
+  // 已完成
+  let doneAll = []
+
+  let dataList = list.value
+  dataList.forEach(it => {
+    // 待开始
+    let waitingToStart = []
+    // 进行中
+    let underway = []
+    // 异常
+    let error = []
+    // 已完成
+    let done = []
+
+    let videoList = it['videoList']
+    videoList
+        .filter(selectList.value[select.value].fun)
+        .forEach(video => {
+          if (underwayFilter(video)) {
+            underway.push(video)
+            return;
+          }
+          if (waitingToStartFilter(video)) {
+            waitingToStart.push(video)
+            return;
+          }
+          if (errorFilter(video)) {
+            error.push(video)
+            return
+          }
+          done.push(video)
+        })
+
+    videoList = [].concat(underway, waitingToStart, error, done)
+    if (videoList.length < 1) {
+      return
+    }
+    // 正在进行
+    if (videoList.filter(underwayFilter).length > 0) {
+      underwayAll.push(it)
+      return
+    }
+    // 待开始
+    if (videoList.filter(waitingToStartFilter).length > 0) {
+      waitingToStartAll.push(it)
+      return
+    }
+    // 已完成
+    doneAll.push(it)
+  })
+  dataList = [].concat(underwayAll, waitingToStartAll, doneAll)
+  page.value.total = dataList.length
+  pageList.value = dataList.slice(start, end)
 }
 
 setInterval(async () => {
@@ -162,69 +224,8 @@ setInterval(async () => {
       .then(res => {
         let data = res.data
         downloadButton.value = data['loadIng']
-        let dataList = data.list;
-        dataList.map(it => {
-          // 待开始
-          let waitingToStart = []
-          // 进行中
-          let underway = []
-          // 异常
-          let error = []
-          // 已完成
-          let done = []
-
-          let videoList = it.videoList
-          videoList = videoList.filter(selectList.value[select.value].fun)
-          videoList.forEach(video => {
-            if (underwayFilter(video)) {
-              underway.push(video)
-              return;
-            }
-            if (waitingToStartFilter(video)) {
-              waitingToStart.push(video)
-              return;
-            }
-            if (errorFilter(video)) {
-              error.push(video)
-              return
-            }
-            done.push(video)
-          })
-
-          it.videoList = [].concat(underway, waitingToStart, error, done)
-          return it;
-        })
-
-        dataList = dataList.filter(item => item.videoList.length > 0)
-
-        // 进行中
-        let underway = []
-        // 待开始
-        let waitingToStart = []
-        // 已完成
-        let done = []
-
-        dataList.forEach(it => {
-          let videoList = it.videoList;
-          // 正在进行
-          if (videoList.filter(underwayFilter).length > 0) {
-            underway.push(it)
-            return
-          }
-          // 待开始
-          if (videoList.filter(waitingToStartFilter).length > 0) {
-            waitingToStart.push(it)
-            return
-          }
-          // 已完成
-          done.push(it)
-        })
-        dataList = [].concat(underway, waitingToStart, done)
-        page.value.totalPage = dataList.length % page.value.size > 0 ?
-            Number((dataList.length / page.value.size).toFixed(0)) + 1 :
-            Number((dataList.length / page.value.size).toFixed(0))
-        list.value = dataList
+        list.value = data.list
       })
-  pageChange()
+  await pageChange()
 }, 3000)
 </script>
