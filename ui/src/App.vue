@@ -144,8 +144,8 @@ let startDownload = () => {
       })
 }
 
-setInterval(() => {
-  fetch('/api/list').then(res => res.json())
+setInterval(async () => {
+  await fetch('/api/list').then(res => res.json())
       .then(res => {
         let data = res.data
         downloadButton.value = data['loadIng']
