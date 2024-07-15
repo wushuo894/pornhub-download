@@ -1,5 +1,6 @@
 package pornhub.download.util;
 
+import cn.hutool.core.lang.Assert;
 import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.log.Log;
@@ -21,6 +22,7 @@ public class ExecutorUtil {
     public static void isInit() {
         if (ObjectUtil.isNull(executor)) {
             log.error("线程池未初始化");
+            throw new IllegalArgumentException("线程池未初始化");
         }
     }
 
