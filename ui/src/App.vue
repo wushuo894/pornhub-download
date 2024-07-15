@@ -49,7 +49,7 @@
               </div>
             </div>
           </el-card>
-          <el-button @click="showResidue = true" v-if="!showResidue">显示剩余 {{ it['videoList'].length - 10 }} 项
+          <el-button @click="showResidue = true" v-if="!showResidue && it['videoList'].length > 10">显示剩余 {{ it['videoList'].length - 10 }} 项
           </el-button>
         </div>
       </el-collapse-item>
