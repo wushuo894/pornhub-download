@@ -12,14 +12,13 @@ import com.google.gson.Gson;
 import pornhub.download.action.RootAction;
 import pornhub.download.annotation.Path;
 import pornhub.download.entity.Config;
-import pornhub.download.util.VideoUtil;
+import pornhub.download.util.ExecutorUtil;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.Executors;
 
 public class Main {
 
@@ -39,7 +38,7 @@ public class Main {
         Gson gson = new Gson();
         CONFIG = gson.fromJson(FileUtil.readUtf8String(configFile), Config.class);
 
-        VideoUtil.executor = Executors.newFixedThreadPool(CONFIG.getThreadNum());
+        ExecutorUtil.init();
 
         SimpleServer server = HttpUtil.createServer(7093);
 

@@ -11,14 +11,13 @@ import lombok.experimental.Accessors;
 import pornhub.download.annotation.Path;
 import pornhub.download.entity.Result;
 import pornhub.download.entity.Video;
+import pornhub.download.util.ExecutorUtil;
 import pornhub.download.util.VideoUtil;
 
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.Serializable;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
 
 @Path("/download")
@@ -31,7 +30,7 @@ public class DownloadAction implements Action {
     public synchronized void doAction(HttpServerRequest req, HttpServerResponse res) {
         res.setContentType("application/json; charset=utf-8");
         PrintWriter writer = res.getWriter();
-        int activeCount = ((ThreadPoolExecutor) VideoUtil.executor).getActiveCount();
+        int activeCount = ((ThreadPoolExecutor) ExecutorUtil.executor).getActiveCount();
 
         if (ListAction.STATUS.getLoadIng()) {
             writer.write(GSON.toJson(Result.error().setMessage("还未加载完成")));
