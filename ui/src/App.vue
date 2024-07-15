@@ -49,7 +49,8 @@
               </div>
             </div>
           </el-card>
-          <el-button @click="showResidue = true">显示剩余 {{ it['videoList'].length - 10 }} 项</el-button>
+          <el-button @click="showResidue = true" v-if="!showResidue">显示剩余 {{ it['videoList'].length - 10 }} 项
+          </el-button>
         </div>
       </el-collapse-item>
     </el-collapse>
@@ -164,14 +165,16 @@ let pageChange = async () => {
   let start = (size * (currentPage - 1))
   let end = size * (currentPage - 1) + size
 
-  // 进行中
-  let underwayAll = []
   // 待开始
   let waitingToStartAll = []
+  // 进行中
+  let underwayAll = []
+  // 异常
+  let errorAll = []
   // 已完成
   let doneAll = []
 
-  let dataList = list.value
+  let dataList = JSON.parse(JSON.stringify(list.value))
   dataList.forEach(it => {
     // 待开始
     let waitingToStart = []
@@ -198,7 +201,9 @@ let pageChange = async () => {
             error.push(video)
             return
           }
-          done.push(video)
+          if (doneFilter(video)) {
+            done.push(video)
+          }
         })
 
     videoList = [].concat(underway, waitingToStart, error, done)
@@ -216,10 +221,14 @@ let pageChange = async () => {
       waitingToStartAll.push(it)
       return
     }
+    if (videoList.filter(errorFilter).length > 0) {
+      errorAll.push(it)
+      return
+    }
     // 已完成
     doneAll.push(it)
   })
-  dataList = [].concat(underwayAll, waitingToStartAll, doneAll)
+  dataList = [].concat(underwayAll, waitingToStartAll, errorAll, doneAll)
   page.value.total = dataList.length
   pageList.value = dataList.slice(start, end)
 }
