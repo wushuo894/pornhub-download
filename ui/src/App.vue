@@ -202,6 +202,7 @@ let pageChange = async () => {
         })
 
     videoList = [].concat(underway, waitingToStart, error, done)
+    it['videoList'] = videoList
     if (videoList.length < 1) {
       return
     }
