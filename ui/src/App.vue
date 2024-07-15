@@ -12,9 +12,9 @@
       </el-select>
     </div>
     <div style="margin: 4px;"></div>
-    <el-collapse accordion>
+    <el-collapse accordion v-model="collapseValue">
       <el-collapse-item :name="i"
-                        v-for="(it,i) in list.slice((page.size * (page.currentPage - 1)), page.size * (page.currentPage-1) + page.size)">
+                        v-for="(it,i) in pageList">
         <template #title>
           <el-avatar
               :src="it.user.avatar"
@@ -29,7 +29,7 @@
           {{ info(it.videoList) }}
         </template>
         <div>
-          <el-card shadow="never" style="margin: 3px 0;" v-for="video in it.videoList">
+          <el-card shadow="never" style="margin: 3px 0;" v-for="video in it.videoList" v-if="collapseValue === i">
             <span>{{ video.title }}</span>
             <el-progress v-if="video.downloadInfo.error" :percentage="100" status="exception"/>
             <el-progress v-else-if="video.downloadInfo.end" :percentage="100" status="success"/>
@@ -52,7 +52,7 @@
     </el-collapse>
     <div style="margin: 4px;"></div>
     <el-pagination background layout="prev, pager, next" v-model:page-size="page.size" :total="list.length"
-                   v-model:current-page="page.currentPage" default-current-page="1"/>
+                   v-model:current-page="page.currentPage" default-current-page="1" @change="pageChange"/>
   </div>
 </template>
 
@@ -111,11 +111,15 @@ const selectList = ref([
   },
 ])
 
+const collapseValue = ref(-1)
+
 const select = ref(0)
 
 const list = ref([])
 
 const downloadButton = ref(true)
+
+const pageList = ref([])
 
 const page = ref({
   size: 15,
@@ -144,8 +148,17 @@ let startDownload = () => {
       })
 }
 
+let pageChange = () => {
+  let size = page.value.size
+  let currentPage = page.value.currentPage
+  let start = (size * (currentPage - 1))
+  let end = size * (currentPage - 1) + size
+  pageList.value = list.value.slice(start, end)
+}
+
 setInterval(async () => {
-  await fetch('/api/list').then(res => res.json())
+  await fetch('/api/list')
+      .then(res => res.json())
       .then(res => {
         let data = res.data
         downloadButton.value = data['loadIng']
@@ -212,5 +225,6 @@ setInterval(async () => {
             Number((dataList.length / page.value.size).toFixed(0))
         list.value = dataList
       })
+  pageChange()
 }, 3000)
 </script>
