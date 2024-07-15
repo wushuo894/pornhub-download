@@ -12,7 +12,7 @@
       </el-select>
     </div>
     <div style="margin: 4px;"></div>
-    <el-collapse accordion v-model="collapseValue">
+    <el-collapse accordion v-model="collapseValue" @change="showResidue = false">
       <el-collapse-item :name="i"
                         v-for="(it,i) in pageList">
         <template #title>
@@ -26,10 +26,13 @@
               style="color: burlywood;">{{ it.user.name }}</h4>
           <h4 v-else>{{ it.user.name }}</h4>
           <div style="width: 8px;"></div>
-          {{ info(it.videoList) }}
+          {{ info(it['videoList']) }}
         </template>
         <div>
-          <el-card shadow="never" style="margin: 3px 0;" v-for="video in it.videoList" v-if="collapseValue === i">
+          <el-card shadow="never"
+                   style="margin: 3px 0;"
+                   v-for="video in it['videoList'].filter((_,index) => index <= 10 || showResidue)"
+                   v-if="collapseValue === i">
             <span>{{ video.title }}</span>
             <el-progress v-if="video.downloadInfo.error" :percentage="100" status="exception"/>
             <el-progress v-else-if="video.downloadInfo.end" :percentage="100" status="success"/>
@@ -47,6 +50,7 @@
               </div>
             </div>
           </el-card>
+          <el-button @click="showResidue = true">显示剩余 {{ it['videoList'].length - 10 }} 项</el-button>
         </div>
       </el-collapse-item>
     </el-collapse>
@@ -120,6 +124,8 @@ const list = ref([])
 const downloadButton = ref(true)
 
 const pageList = ref([])
+
+const showResidue = ref(false)
 
 const page = ref({
   size: 15,
