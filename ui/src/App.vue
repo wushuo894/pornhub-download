@@ -43,13 +43,14 @@
                 /
                 {{ (video.downloadInfo.downloadLength / (1024 * 1024)).toFixed(2) }} MB
               </div>
-              <div>
+              <div v-if="!video.downloadInfo.end">
                 剩余 {{ video.downloadInfo.timeRemaining?.toFixed(2) }} 分钟
                 {{ (video.downloadInfo.speed)?.toFixed(2) }} MB/S
               </div>
             </div>
           </el-card>
-          <el-button @click="showResidue = true" v-if="!showResidue && it['videoList'].length > 10">显示剩余 {{ it['videoList'].length - 10 }} 项
+          <el-button @click="showResidue = true" v-if="!showResidue && it['videoList'].length > 10">显示剩余
+            {{ it['videoList'].length - 10 }} 项
           </el-button>
         </div>
       </el-collapse-item>
