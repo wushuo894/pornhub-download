@@ -1,6 +1,6 @@
 # ![app icon](https://github.com/wushuo894/pornhub-download/raw/master/logo.jpg) pornhub-download
 
-`docker run -d --name pornhub-download -v ./video:/video -v ./config:/config -p 7093:7093 -e TZ=Asia/Shanghai --restart always wushuo894/pornhub-download`
+    docker run -d --name pornhub-download -v ./video:/video -v ./config:/config -p 7093:7093 -e TZ=Asia/Shanghai --restart always wushuo894/pornhub-download
 
 | 路径      | 作用        |
 |---------|-----------|
