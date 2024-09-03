@@ -14,7 +14,6 @@
 | /video  | 视频下载保存的位置 |
 
 
-![截图](https://github.com/wushuo894/pornhub-download/raw/master/images/0.png)
+![screenshots.jpg](https://github.com/wushuo894/pornhub-download/raw/master/images/screenshots.jpg)
 
-![截图](https://github.com/wushuo894/pornhub-download/raw/master/images/1.png)
 
