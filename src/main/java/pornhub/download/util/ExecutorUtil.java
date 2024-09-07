@@ -1,6 +1,5 @@
 package pornhub.download.util;
 
-import cn.hutool.core.lang.Assert;
 import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.log.Log;
