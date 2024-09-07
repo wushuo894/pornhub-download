@@ -25,6 +25,7 @@ import pornhub.download.entity.Video;
 
 import javax.script.ScriptEngine;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.CookieManager;
@@ -114,7 +115,7 @@ public class VideoUtil {
      * @param file
      */
     public static void download(String mp4Url, File file, DownloadAction.DownloadInfo downloadInfo) throws Exception {
-        FileUtil.del(file + ".tmp");
+//        FileUtil.del(file + ".tmp");
         File tmpFile = new File(file + ".tmp");
         AtomicReference<OutputStream> outputStream = new AtomicReference<>(null);
         AtomicReference<InputStream> inputStream = new AtomicReference<>(null);
@@ -132,6 +133,14 @@ public class VideoUtil {
                         long contentLength = res.contentLength();
                         outputStream.set(FileUtil.getOutputStream(tmpFile));
                         inputStream.set(res.bodyStream());
+
+                        if (tmpFile.exists()) {
+                            try {
+                                inputStream.get().skip(tmpFile.length());
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
 
 
                         downloadInfo
